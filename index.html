@@ -461,7 +461,7 @@
           { id: 7, arab: "مَطْبَخٌ", latin: "Mathbakhun", arti: "Dapur", contoh: "أُمِّي فِي الْمَطْبَخِ الآنَ", deskripsi: "Ruangan khusus untuk memasak makanan." },
           { id: 8, arab: "حَمَّامٌ", latin: "Hammaamun", arti: "Kamar Mandi", contoh: "أَغْتَسِلُ فِي الْحَمَّامِ", deskripsi: "Ruangan untuk membersihkan diri." },
           { id: 9, arab: "غُرْفَةُ النَّوْمِ", latin: "Ghurfatun Naumi", arti: "Kamar Tidur", contoh: "أَنَامُ فِي غُرْفَةِ النَّوْمِ", deskripsi: "Ruangan tertutup untuk istirahat dan tidur." },
-          { id: 10, arab: "غُرْفَةُ الجُلُوْسِ", টুক: "Ruang Tamu", contoh: "نَسْتَقْبِلُ الضَّيْفَ فِي غُرْفَةِ الْجُلُوْسِ", deskripsi: "Ruangan depan untuk menyambut tamu." },
+          { id: 10, arab: "غُرْفَةُ الجُلُوْسِ", latin: "Ghurfatul Juluusi", arti: "Ruang Tamu", contoh: "نَسْتَقْبِلُ الضَّيْفَ فِي غُرْفَةِ الْجُلُوْسِ", deskripsi: "Ruangan depan untuk menyambut tamu." },
         ]
       },
       26: {
@@ -579,6 +579,13 @@
       const audioChunksRef = useRef([]);
 
       const currentMufrodatList = MUFRODAT_DB[selectedDay].data;
+
+      // FUNGSI UNTUK MENGECEK APAKAH HARI TERBUKA ATAU TERKUNCI
+      const checkDayUnlocked = (day) => {
+        if (day === 1) return true; // Hari 1 selalu terbuka
+        // Cek apakah hari sebelumnya sudah mendapat nilai >= 80
+        return myScores.some(s => s.day == (day - 1) && s.score >= 80);
+      };
 
       useEffect(() => {
         const fetchVoices = () => setAvailableVoices(window.speechSynthesis.getVoices());
@@ -1251,39 +1258,53 @@
             {activeTab === 'home' && (
               <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
-                  {Object.keys(MUFRODAT_DB).map((day) => (
-                    <div 
-                      key={day} 
-                      className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 cursor-pointer ${selectedDay == day ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-white text-slate-800 border border-slate-100'}`}
-                      onClick={() => { setSelectedDay(parseInt(day)); setActiveTab('materi'); window.scrollTo(0,0); }}
-                    >
-                      <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                          <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay == day ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-100 text-slate-500'}`}>
-                            HARI {day}
-                          </span>
-                          {myScores.some(s => s.day == day && s.score >= 80) && (
-                            <CheckCircle className={selectedDay == day ? "text-emerald-200" : "text-emerald-500"} size={20} />
-                          )}
+                  {Object.keys(MUFRODAT_DB).map((day) => {
+                    const dayNum = parseInt(day);
+                    const isUnlocked = checkDayUnlocked(dayNum);
+                    const isPassed = myScores.some(s => s.day == dayNum && s.score >= 80);
+
+                    return (
+                      <div 
+                        key={day} 
+                        className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 cursor-pointer 
+                          ${selectedDay == day ? 'bg-emerald-600 text-white shadow-emerald-100' 
+                             : !isUnlocked ? 'bg-slate-50 text-slate-500 border border-slate-200 opacity-80' 
+                             : 'bg-white text-slate-800 border border-slate-100'}`}
+                        onClick={() => { setSelectedDay(dayNum); setActiveTab('materi'); window.scrollTo(0,0); }}
+                      >
+                        <div className="relative z-10">
+                          <div className="flex justify-between items-start mb-4">
+                            <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay == day ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-200 text-slate-600'}`}>
+                              HARI {day}
+                            </span>
+                            {isPassed ? (
+                              <CheckCircle className={selectedDay == day ? "text-emerald-200" : "text-emerald-500"} size={20} />
+                            ) : !isUnlocked ? (
+                              <Lock className={selectedDay == day ? "text-emerald-200" : "text-slate-400"} size={18} />
+                            ) : null}
+                          </div>
+                          <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay == day ? '#a7f3d0' : isUnlocked ? '#047857' : '#94a3b8' }}>
+                            {MUFRODAT_DB[day].titleAr}
+                          </h3>
+                          <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay == day ? 'text-emerald-100' : isUnlocked ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {MUFRODAT_DB[day].title}
+                          </h2>
+                          <button 
+                            className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 touch-manipulation 
+                              ${selectedDay == day ? 'bg-white text-emerald-700 hover:bg-emerald-50' 
+                                 : !isUnlocked ? 'bg-slate-200 text-slate-500 hover:bg-slate-300 shadow-none'
+                                 : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                          >
+                            {isPassed ? `Misi Selesai` : !isUnlocked ? `Lihat Materi` : `Pilih Misi ${day}`}
+                          </button>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay == day ? '#a7f3d0' : '#047857' }}>
-                          {MUFRODAT_DB[day].titleAr}
-                        </h3>
-                        <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay == day ? 'text-emerald-100' : 'text-slate-500'}`}>
-                          {MUFRODAT_DB[day].title}
-                        </h2>
-                        <button 
-                          className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 touch-manipulation ${selectedDay == day ? 'bg-white text-emerald-700 hover:bg-emerald-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                        >
-                          Pilih Misi {day}
-                        </button>
+                        <BookOpen 
+                          className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 ${selectedDay == day ? 'text-white' : 'text-slate-900'}`} 
+                          size={100} 
+                        />
                       </div>
-                      <BookOpen 
-                        className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 ${selectedDay == day ? 'text-white' : 'text-slate-900'}`} 
-                        size={100} 
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-slate-100 shadow-sm">
@@ -1446,55 +1467,78 @@
                 {/* Step 1: Setor Hafalan Utama */}
                 {rekamStep === 1 && (
                   <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
-                    <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-emerald-50">
-                      <Mic size={40} className="md:w-[48px] md:h-[48px]" />
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Setor Hafalan Hari {selectedDay}</h2>
-                    <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
-                      <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
-                      <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
-                      <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
-                      <p className="text-slate-500 mt-6 text-sm md:text-base px-2 md:px-6">Tekan tombol rekam di bawah ini dan bacakan 10 hafalan mufrodat bahasa Arab beserta artinya dengan lantang!</p>
-                    </div>
-
-                    {!audioUrl ? (
-                      <div className="flex flex-col items-center justify-center gap-6">
-                        <button
-                          onClick={isRecording ? stopRecording : startRecording}
-                          className={`w-24 h-24 md:w-28 md:h-28 rounded-[2rem] flex items-center justify-center text-white shadow-xl transition-all touch-manipulation active:scale-95 ${isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-emerald-200'}`}
-                        >
-                          {isRecording ? <Square size={32} className="md:w-10 md:h-10" /> : <Mic size={40} className="md:w-12 md:h-12" />}
-                        </button>
-                        <p className="text-sm md:text-base font-bold text-slate-400">
-                          {isRecording ? "Sedang merekam... Tekan kotak untuk berhenti." : "Tekan ikon Mikrofon untuk mulai merekam"}
-                        </p>
-                      </div>
+                    
+                    {/* Cek Apakah Hari Ini Sudah Terbuka (Unlocked) */}
+                    {!checkDayUnlocked(selectedDay) ? (
+                       <div className="flex flex-col items-center justify-center py-6 md:py-10">
+                         <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-6 md:mb-8 ring-8 ring-slate-50">
+                           <Lock size={40} className="md:w-[48px] md:h-[48px]" />
+                         </div>
+                         <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-4 tracking-tight">Setor Hafalan Terkunci</h2>
+                         <p className="text-slate-500 mb-8 text-sm md:text-base text-center max-w-md px-4">
+                           Kamu harus menyelesaikan <b>Kuis Hari {selectedDay - 1}</b> dengan nilai minimal 80 untuk membuka misi setor hafalan ini.
+                         </p>
+                         <button 
+                           onClick={() => {setSelectedDay(selectedDay - 1); setActiveTab('quiz'); setQuizStep(0); window.scrollTo(0,0);}} 
+                           className="w-full max-w-sm bg-slate-800 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-slate-900 transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-2 mx-auto"
+                         >
+                           <Award size={20}/> Kerjakan Kuis Hari {selectedDay - 1}
+                         </button>
+                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center gap-6 w-full animate-in zoom-in-95">
-                        <div className="bg-slate-50 p-4 rounded-2xl w-full max-w-md border border-slate-200 shadow-sm">
-                           <audio src={audioUrl} controls className="w-full h-12 outline-none" />
+                      // Jika Terbuka, Tampilkan UI Rekam Hafalan Normal
+                      <>
+                        <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-emerald-50">
+                          <Mic size={40} className="md:w-[48px] md:h-[48px]" />
                         </div>
-                        
-                        {!isAudioSent ? (
-                          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                             <button onClick={deleteRecording} disabled={isProcessing} className="flex-1 py-3 md:py-4 bg-white border border-slate-200 text-slate-600 rounded-xl md:rounded-2xl font-black hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
-                               <Trash2 size={18} /> Ulangi
-                             </button>
-                             <button onClick={submitHafalan} disabled={isProcessing} className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
-                               {isProcessing ? "Mengirim..." : "Kirim Rekaman"} <ArrowRight size={18}/>
-                             </button>
+                        <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Setor Hafalan Hari {selectedDay}</h2>
+                        <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
+                          <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
+                          <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
+                          <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
+                          <p className="text-slate-500 mt-6 text-sm md:text-base px-2 md:px-6">Tekan tombol rekam di bawah ini dan bacakan 10 hafalan mufrodat bahasa Arab beserta artinya dengan lantang!</p>
+                        </div>
+
+                        {!audioUrl ? (
+                          <div className="flex flex-col items-center justify-center gap-6">
+                            <button
+                              onClick={isRecording ? stopRecording : startRecording}
+                              className={`w-24 h-24 md:w-28 md:h-28 rounded-[2rem] flex items-center justify-center text-white shadow-xl transition-all touch-manipulation active:scale-95 ${isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-emerald-200'}`}
+                            >
+                              {isRecording ? <Square size={32} className="md:w-10 md:h-10" /> : <Mic size={40} className="md:w-12 md:h-12" />}
+                            </button>
+                            <p className="text-sm md:text-base font-bold text-slate-400">
+                              {isRecording ? "Sedang merekam... Tekan kotak untuk berhenti." : "Tekan ikon Mikrofon untuk mulai merekam"}
+                            </p>
                           </div>
                         ) : (
-                          <div className="flex flex-col gap-4 w-full max-w-md fade-in-up">
-                             <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm">
-                                <CheckCircle size={24} /> Rekaman Berhasil Dikirim!
-                             </div>
-                             <button onClick={() => { setActiveTab('quiz'); setQuizStep(0); setCurrentQuestion(0); setScore(0); window.scrollTo(0,0); }} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 mt-2 touch-manipulation active:scale-95">
-                               Lanjut ke Kuis <ArrowRight size={18}/>
-                             </button>
+                          <div className="flex flex-col items-center justify-center gap-6 w-full animate-in zoom-in-95">
+                            <div className="bg-slate-50 p-4 rounded-2xl w-full max-w-md border border-slate-200 shadow-sm">
+                               <audio src={audioUrl} controls className="w-full h-12 outline-none" />
+                            </div>
+                            
+                            {!isAudioSent ? (
+                              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                                 <button onClick={deleteRecording} disabled={isProcessing} className="flex-1 py-3 md:py-4 bg-white border border-slate-200 text-slate-600 rounded-xl md:rounded-2xl font-black hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
+                                   <Trash2 size={18} /> Ulangi
+                                 </button>
+                                 <button onClick={submitHafalan} disabled={isProcessing} className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
+                                   {isProcessing ? "Mengirim..." : "Kirim Rekaman"} <ArrowRight size={18}/>
+                                 </button>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-4 w-full max-w-md fade-in-up">
+                                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm">
+                                    <CheckCircle size={24} /> Rekaman Berhasil Dikirim!
+                                 </div>
+                                 <button onClick={() => { setActiveTab('quiz'); setQuizStep(0); setCurrentQuestion(0); setScore(0); window.scrollTo(0,0); }} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 mt-2 touch-manipulation active:scale-95">
+                                   Lanjut ke Kuis <ArrowRight size={18}/>
+                                 </button>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -1507,28 +1551,51 @@
                 {/* Step 0: Layar Mulai */}
                 {quizStep === 0 && (
                    <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
-                     <div className="w-20 h-20 md:w-24 md:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-orange-50">
-                       <Trophy size={40} className="md:w-[48px] md:h-[48px]" />
-                     </div>
-                     <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Kuis Hari {selectedDay}</h2>
-                     <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
-                       <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
-                       <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
-                       <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
-                       <p className="text-slate-500 mt-4 text-sm md:text-base px-2 md:px-6">Selesaikan 10 soal tantangan campuran.</p>
-                     </div>
-                     <button 
-                       onClick={() => { 
-                         const shuffled = [...currentMufrodatList].sort(() => Math.random() - 0.5);
-                         setQuizQuestions(shuffled);
-                         setQuizStep(1); 
-                         setScore(0); 
-                         setCurrentQuestion(0); 
-                       }} 
-                       className="w-full bg-emerald-600 text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-lg md:text-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation shadow-emerald-200"
-                     >
-                       Mulai Kuis Sekarang
-                     </button>
+                     
+                     {/* Cek Apakah Hari Ini Sudah Terbuka (Unlocked) */}
+                     {!checkDayUnlocked(selectedDay) ? (
+                       <div className="flex flex-col items-center justify-center py-6 md:py-10">
+                         <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-6 md:mb-8 ring-8 ring-slate-50">
+                           <Lock size={40} className="md:w-[48px] md:h-[48px]" />
+                         </div>
+                         <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-4 tracking-tight">Kuis Terkunci</h2>
+                         <p className="text-slate-500 mb-8 text-sm md:text-base text-center max-w-md px-4">
+                           Kamu harus menyelesaikan <b>Kuis Hari {selectedDay - 1}</b> dengan nilai minimal 80 untuk membuka misi kuis ini.
+                         </p>
+                         <button 
+                           onClick={() => {setSelectedDay(selectedDay - 1); setActiveTab('quiz'); setQuizStep(0); window.scrollTo(0,0);}} 
+                           className="w-full max-w-sm bg-slate-800 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-slate-900 transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-2 mx-auto"
+                         >
+                           <Award size={20}/> Kerjakan Kuis Hari {selectedDay - 1}
+                         </button>
+                       </div>
+                     ) : (
+                       // Jika Terbuka, Tampilkan UI Mulai Kuis Normal
+                       <>
+                         <div className="w-20 h-20 md:w-24 md:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-orange-50">
+                           <Trophy size={40} className="md:w-[48px] md:h-[48px]" />
+                         </div>
+                         <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Kuis Hari {selectedDay}</h2>
+                         <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
+                           <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
+                           <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
+                           <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
+                           <p className="text-slate-500 mt-4 text-sm md:text-base px-2 md:px-6">Selesaikan 10 soal tantangan campuran.</p>
+                         </div>
+                         <button 
+                           onClick={() => { 
+                             const shuffled = [...currentMufrodatList].sort(() => Math.random() - 0.5);
+                             setQuizQuestions(shuffled);
+                             setQuizStep(1); 
+                             setScore(0); 
+                             setCurrentQuestion(0); 
+                           }} 
+                           className="w-full bg-emerald-600 text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-lg md:text-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation shadow-emerald-200"
+                         >
+                           Mulai Kuis Sekarang
+                         </button>
+                       </>
+                     )}
                    </div>
                 )}
 
@@ -1580,7 +1647,7 @@
                          
                          <div className="flex justify-center flex-wrap gap-2 md:gap-4 mb-8 md:mb-12 min-h-[70px] md:min-h-[90px] p-4 md:p-6 bg-slate-50 rounded-2xl md:rounded-[2rem] border-2 border-dashed border-slate-200" dir="rtl">
                            {currentGuess.length === 0 && (
-                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah...</span>
+                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah</span>
                            )}
                            {currentGuess.map((l, i) => (
                              <button 
