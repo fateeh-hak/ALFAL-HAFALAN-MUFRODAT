@@ -852,6 +852,10 @@
         const localHistoryKey = `alfal_history_${participantName}`;
         const localHistory = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
 
+        // Langsung set dari localStorage agar riwayat tetap muncul saat reload & misi tidak terkunci
+        localHistory.sort((a, b) => b.timestamp - a.timestamp);
+        setMyScores(localHistory);
+
         if (db) {
           const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
           const q = query(scoresCol);
@@ -860,18 +864,29 @@
             const allScores = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const filtered = allScores
               .filter(s => s.name === participantName)
-              .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-            setMyScores(filtered);
+              .map(s => ({
+                ...s,
+                // Pastikan format waktu dari Firestore diubah ke milidetik
+                timestamp: s.timestamp?.seconds ? s.timestamp.seconds * 1000 : (typeof s.timestamp === 'number' ? s.timestamp : Date.now())
+              }));
+            
+            // Gabungkan data agar aman (Local + Server)
+            const currentLocal = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
+            const combinedMap = new Map();
+            
+            currentLocal.forEach(item => combinedMap.set(`${item.day}-${item.score}`, item));
+            filtered.forEach(item => combinedMap.set(`${item.day}-${item.score}`, item));
+
+            const combined = Array.from(combinedMap.values());
+            combined.sort((a, b) => b.timestamp - a.timestamp);
+            
+            setMyScores(combined);
+            localStorage.setItem(localHistoryKey, JSON.stringify(combined));
           }, (err) => {
              console.error("Firestore Error:", err);
-             localHistory.sort((a, b) => b.timestamp - a.timestamp);
-             setMyScores(localHistory); 
           });
           
           return () => unsubscribe();
-        } else {
-          localHistory.sort((a, b) => b.timestamp - a.timestamp);
-          setMyScores(localHistory);
         }
       }, [user, isLoggedIn, participantName, db]);
 
@@ -913,6 +928,7 @@
           setParticipantName("");
           setInputToken("");
           setActiveTab('home');
+          setMyScores([]);
         }
       };
 
@@ -1647,7 +1663,7 @@
                          
                          <div className="flex justify-center flex-wrap gap-2 md:gap-4 mb-8 md:mb-12 min-h-[70px] md:min-h-[90px] p-4 md:p-6 bg-slate-50 rounded-2xl md:rounded-[2rem] border-2 border-dashed border-slate-200" dir="rtl">
                            {currentGuess.length === 0 && (
-                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah</span>
+                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah...</span>
                            )}
                            {currentGuess.map((l, i) => (
                              <button 
