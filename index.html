@@ -127,6 +127,16 @@
       return localData;
     };
 
+    const normalizeArabic = (text) => {
+      if (!text) return "";
+      return text
+        .replace(/[\u064B-\u065F\u0670]/g, '') // Hapus harakat
+        .replace(/[أإآ]/g, 'ا') // Normalisasi bentuk alif
+        .replace(/ة/g, 'ه') // Normalisasi ta marbuthoh ke ha (API Google sering membaca 'ha' di akhir)
+        .replace(/ى/g, 'ي') // Normalisasi alif maqsurah
+        .trim();
+    };
+
     // Database Mufrodat Berdasarkan Hari (1-30)
     const MUFRODAT_DB = {
       1: {
@@ -788,9 +798,9 @@
             const speechResult = event.results[0][0].transcript;
             setRecognizedText(speechResult);
             
-            // Pengecekan tanpa harakat untuk akurasi lebih baik
-            const targetWord = voiceQuizList[currentVoiceQuestion].arab.replace(/[\u064B-\u065F\u0670]/g, '');
-            const spokenWord = speechResult.replace(/[\u064B-\u065F\u0670]/g, '');
+            // Pengecekan dengan normalisasi agar huruf yang dibaca oleh Google Speech (tanpa harakat, ta marbuthoh jadi ha, dll) bisa tetap valid
+            const targetWord = normalizeArabic(voiceQuizList[currentVoiceQuestion].arab);
+            const spokenWord = normalizeArabic(speechResult);
 
             if (spokenWord.includes(targetWord) || targetWord.includes(spokenWord)) {
                setVoiceQuizFeedback('correct');
@@ -802,7 +812,7 @@
                  } else {
                     setRekamStep(1); 
                  }
-               }, 1500);
+               }, 2500); // Waktu diperpanjang sedikit agar siswa bisa melihat & merekam di otak tulisan Arab yang sempurna
             } else {
                setVoiceQuizFeedback('wrong');
             }
@@ -1417,11 +1427,18 @@
                         {!isListeningQuiz && !recognizedText && <p className="text-sm font-bold text-slate-400">Ketuk untuk bicara</p>}
                         
                         {recognizedText && (
-                           <div className="animate-in fade-in zoom-in duration-300">
-                             <p className="text-2xl md:text-3xl font-arabic font-bold text-slate-800" dir="rtl">{recognizedText}</p>
-                             {voiceQuizFeedback === 'correct' && <p className="text-emerald-500 font-bold text-sm md:text-base mt-2">⭐ Mumtaz! Pengucapan tepat.</p>}
-                             {voiceQuizFeedback === 'wrong' && <p className="text-red-500 font-bold text-sm md:text-base mt-2">Kurang tepat, ayo coba lagi!</p>}
-                             {voiceQuizFeedback === 'error' && <p className="text-orange-500 font-bold text-sm md:text-base mt-2">Suara tidak terdengar jelas.</p>}
+                           <div className="animate-in fade-in zoom-in duration-300 w-full flex flex-col items-center">
+                             {voiceQuizFeedback === 'correct' ? (
+                               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-2 mb-2 shadow-sm animate-in zoom-in duration-300">
+                                  <p className="text-3xl md:text-4xl font-arabic font-bold text-emerald-700" dir="rtl">{voiceQuizList[currentVoiceQuestion].arab}</p>
+                               </div>
+                             ) : (
+                               <p className="text-2xl md:text-3xl font-arabic font-bold text-slate-800 mb-2" dir="rtl">{recognizedText}</p>
+                             )}
+                             
+                             {voiceQuizFeedback === 'correct' && <p className="text-emerald-500 font-bold text-sm md:text-base mt-1">⭐ Mumtaz! Pengucapan tepat.</p>}
+                             {voiceQuizFeedback === 'wrong' && <p className="text-red-500 font-bold text-sm md:text-base mt-1">Kurang tepat, ayo coba lagi!</p>}
+                             {voiceQuizFeedback === 'error' && <p className="text-orange-500 font-bold text-sm md:text-base mt-1">Suara tidak terdengar jelas.</p>}
                            </div>
                         )}
                       </div>
