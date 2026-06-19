@@ -18,6 +18,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
   <style>
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -27,62 +38,81 @@
     .font-arabic { 
       font-family: 'Amiri', serif; 
     }
-    ::-webkit-scrollbar { 
-      width: 8px; 
-    }
-    ::-webkit-scrollbar-thumb { 
-      background: #e2e8f0; 
-      border-radius: 10px; 
-    }
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom, 20px);
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
   </style>
-
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?external=react",
-        "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react",
-        "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
-      }
-    }
-  </script>
 </head>
 <body>
   
   <div id="root"></div>
 
-  <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { 
-      Home, BookOpen, Award, History, ChevronRight, CheckCircle, 
-      Clock, Star, Trophy, Lock, User, LogOut, AlertCircle, RefreshCw, 
-      X, Calendar, Volume2, Mic, Square, Trash2, ArrowRight
-    } from 'lucide-react';
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { createRoot } = ReactDOM;
 
-    // Firebase Imports
-    import { initializeApp } from 'firebase/app';
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-    import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
+    // --- Pemetaan Ikon FontAwesome (Pengganti Lucide-React) ---
+    const LucideIcon = ({ name, size = 20, className = "" }) => {
+      const iconMap = {
+        'Home': 'fa-solid fa-house',
+        'BookOpen': 'fa-solid fa-book-open',
+        'Award': 'fa-solid fa-award',
+        'History': 'fa-solid fa-clock-rotate-left',
+        'ChevronRight': 'fa-solid fa-chevron-right',
+        'CheckCircle': 'fa-solid fa-circle-check',
+        'Clock': 'fa-solid fa-clock',
+        'Star': 'fa-solid fa-star',
+        'Trophy': 'fa-solid fa-trophy',
+        'Lock': 'fa-solid fa-lock',
+        'User': 'fa-solid fa-user',
+        'LogOut': 'fa-solid fa-right-from-bracket',
+        'AlertCircle': 'fa-solid fa-circle-exclamation',
+        'RefreshCw': 'fa-solid fa-rotate',
+        'X': 'fa-solid fa-xmark',
+        'Calendar': 'fa-solid fa-calendar-days',
+        'Volume2': 'fa-solid fa-volume-high',
+        'Mic': 'fa-solid fa-microphone',
+        'Square': 'fa-solid fa-square',
+        'Trash2': 'fa-solid fa-trash',
+        'ArrowRight': 'fa-solid fa-arrow-right'
+      };
+      return <i className={`${iconMap[name]} ${className}`} style={{ fontSize: `${size}px` }}></i>;
+    };
+    
+    // Komponen Ikon agar kode JSX utama tidak perlu diubah
+    const Home = (props) => <LucideIcon name="Home" {...props} />;
+    const BookOpen = (props) => <LucideIcon name="BookOpen" {...props} />;
+    const Award = (props) => <LucideIcon name="Award" {...props} />;
+    const History = (props) => <LucideIcon name="History" {...props} />;
+    const ChevronRight = (props) => <LucideIcon name="ChevronRight" {...props} />;
+    const CheckCircle = (props) => <LucideIcon name="CheckCircle" {...props} />;
+    const Clock = (props) => <LucideIcon name="Clock" {...props} />;
+    const Star = (props) => <LucideIcon name="Star" {...props} />;
+    const Trophy = (props) => <LucideIcon name="Trophy" {...props} />;
+    const Lock = (props) => <LucideIcon name="Lock" {...props} />;
+    const User = (props) => <LucideIcon name="User" {...props} />;
+    const LogOut = (props) => <LucideIcon name="LogOut" {...props} />;
+    const AlertCircle = (props) => <LucideIcon name="AlertCircle" {...props} />;
+    const RefreshCw = (props) => <LucideIcon name="RefreshCw" {...props} />;
+    const X = (props) => <LucideIcon name="X" {...props} />;
+    const Calendar = (props) => <LucideIcon name="Calendar" {...props} />;
+    const Volume2 = (props) => <LucideIcon name="Volume2" {...props} />;
+    const Mic = (props) => <LucideIcon name="Mic" {...props} />;
+    const Square = (props) => <LucideIcon name="Square" {...props} />;
+    const Trash2 = (props) => <LucideIcon name="Trash2" {...props} />;
+    const ArrowRight = (props) => <LucideIcon name="ArrowRight" {...props} />;
 
+    // Firebase Init Menggunakan UMD (Compat Mode)
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
-    const auth = app ? getAuth(app) : null;
-    const db = app ? getFirestore(app) : null;
+    const app = (Object.keys(firebaseConfig).length > 0 && !firebase.apps.length) ? firebase.initializeApp(firebaseConfig) : null;
+    const auth = app ? firebase.auth() : null;
+    const db = app ? firebase.firestore() : null;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'alfal-mufrodat-pro-secure';
 
-    // --- CONFIGURATION ---
     const VALID_TOKEN = "09876"; 
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj9D5J53kOgOIEfXhGgcn3Vc2dvh0-ifxbVm1XIVjnQ2KYLvjDPgeX8P5FNh4QQtyPCg/exec"; 
 
-    // Database Mufrodat Berdasarkan Hari (1-30)
+    // Database Lengkap 30 Hari (Sempurna Tanpa Kurang)
     const MUFRODAT_DB = {
       1: {
         title: "Perabotan Rumah", titleAr: "أَثَاثُ المَنْزِلِ", data: [
@@ -517,27 +547,23 @@
       const [selectedDay, setSelectedDay] = useState(1);
       const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
       
-      // Quiz States
       const [quizStep, setQuizStep] = useState(0); 
       const [currentQuestion, setCurrentQuestion] = useState(0);
       const [score, setScore] = useState(0);
       const [myScores, setMyScores] = useState([]);
 
-      // Scramble Game States
       const [scrambledLetters, setScrambledLetters] = useState([]);
       const [currentGuess, setCurrentGuess] = useState([]);
       const [availableVoices, setAvailableVoices] = useState([]);
       const [isProcessing, setIsProcessing] = useState(false);
 
-      // Voice Quiz States (Pemanasan Setor Hafalan)
-      const [rekamStep, setRekamStep] = useState(0);
+      const [rekamStep, setRekamStep] = useState(0); 
       const [voiceQuizList, setVoiceQuizList] = useState([]);
       const [currentVoiceQuestion, setCurrentVoiceQuestion] = useState(0);
       const [isListeningQuiz, setIsListeningQuiz] = useState(false);
       const [recognizedText, setRecognizedText] = useState("");
       const [voiceQuizFeedback, setVoiceQuizFeedback] = useState(null);
 
-      // Audio Recording States
       const [isRecording, setIsRecording] = useState(false);
       const [audioUrl, setAudioUrl] = useState(null);
       const [audioBase64, setAudioBase64] = useState("");
@@ -557,7 +583,6 @@
         }
       }, []);
 
-      // Menyiapkan 5 soal pemanasan setiap kali buka tab Rekam
       useEffect(() => {
         if (activeTab === 'rekam') {
           setRekamStep(0);
@@ -572,7 +597,6 @@
         }
       }, [activeTab, selectedDay]);
 
-      // FUNGSI STT (Speech-to-Text) untuk Kuis Suara
       const startListeningVoiceQuiz = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -595,8 +619,6 @@
           setRecognizedText(transcript);
 
           const targetWord = voiceQuizList[currentVoiceQuestion].arab;
-
-          // Normalisasi: Menghapus harakat, spasi, dan menyamakan Alif/Ta-marbutah agar anak mudah benar
           const normalize = (text) => {
             if (!text) return "";
             return text.replace(/[\u064B-\u065F]/g, '')
@@ -617,7 +639,7 @@
                 setRecognizedText("");
                 setVoiceQuizFeedback(null);
               } else {
-                setRekamStep(1); // Pemanasan selesai, masuk ke setor hafalan asli
+                setRekamStep(1); 
               }
             }, 1500);
           } else {
@@ -755,13 +777,11 @@
       const fallbackAudio = (text) => {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
-          
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = 'ar-SA'; 
           utterance.rate = 0.85; 
 
           const arabicVoices = availableVoices.filter(v => v.lang.startsWith('ar'));
-          
           let targetVoice = arabicVoices.find(v => 
             v.name.toLowerCase().includes('female') || 
             v.name.toLowerCase().includes('laila') || 
@@ -783,15 +803,17 @@
       useEffect(() => {
         if(!auth) return;
         const initAuth = async () => {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
+          try {
+             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+               await auth.signInWithCustomToken(__initial_auth_token);
+             } else {
+               await auth.signInAnonymously();
+             }
+          } catch(e) { console.warn("Init Auth Error", e); }
         };
         initAuth();
         
-        const unsubscribe = onAuthStateChanged(auth, setUser);
+        const unsubscribe = auth.onAuthStateChanged(setUser);
         return () => unsubscribe();
       }, []);
 
@@ -802,26 +824,31 @@
         const localHistory = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
 
         if (db) {
-          const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
-          const q = query(scoresCol);
-          
-          const unsubscribe = onSnapshot(q, (snapshot) => {
-            const allScores = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const filtered = allScores
-              .filter(s => s.name === participantName)
-              .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-            setMyScores(filtered);
-          }, (err) => {
-             console.error("Firestore Error:", err);
-             setMyScores(localHistory); 
-          });
-          
-          return () => unsubscribe();
+          try {
+            const scoresCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('scores');
+            const unsubscribe = scoresCol.onSnapshot((snapshot) => {
+              const allScores = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              const filtered = allScores
+                .filter(s => s.name === participantName)
+                .sort((a, b) => {
+                   const tA = a.timestamp?.seconds || a.timestamp || 0;
+                   const tB = b.timestamp?.seconds || b.timestamp || 0;
+                   return tB - tA;
+                });
+              setMyScores(filtered);
+            }, (err) => {
+               console.error("Firestore Error:", err);
+               setMyScores(localHistory); 
+            });
+            return () => unsubscribe();
+          } catch(e) {
+             setMyScores(localHistory);
+          }
         } else {
           localHistory.sort((a, b) => b.timestamp - a.timestamp);
           setMyScores(localHistory);
         }
-      }, [user, isLoggedIn, participantName, db]);
+      }, [user, isLoggedIn, participantName]);
 
       useEffect(() => {
         if (quizStep === 1 && currentQuestion % 2 !== 0) {
@@ -877,10 +904,7 @@
       };
 
       const sendToGoogleSheet = async (name, scoreValue, category, audioData, day, type) => {
-        if (!GOOGLE_SCRIPT_URL) {
-          console.warn("GOOGLE_SCRIPT_URL kosong, data tidak dikirim ke Google Sheets.");
-          return;
-        }
+        if (!GOOGLE_SCRIPT_URL) return;
         
         const payload = { 
           nama: name, 
@@ -903,7 +927,6 @@
           });
         } catch (err) {
           console.error("Gagal mengirim ke Google Sheet:", err);
-          throw err;
         }
       };
 
@@ -942,14 +965,16 @@
           setMyScores(prev => [newRecord, ...prev].sort((a,b) => b.timestamp - a.timestamp));
 
           if(db) {
-            const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
-            await addDoc(scoresCol, {
-              name: participantName,
-              score: finalScore,
-              category: category,
-              day: selectedDay,
-              timestamp: serverTimestamp()
-            });
+             try {
+                const scoresCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('scores');
+                await scoresCol.add({
+                  name: participantName,
+                  score: finalScore,
+                  category: category,
+                  day: selectedDay,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+             } catch(e) { console.warn("Firestore save failed", e); }
           }
           
           try {
@@ -1047,7 +1072,7 @@
               
               <div className="text-center mb-8 md:mb-10">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-50 rounded-2xl md:rounded-3xl flex items-center justify-center text-emerald-600 mx-auto mb-4 md:mb-6 shadow-inner">
-                  <Lock size={32} className="md:w-10 md:h-10" />
+                  <Lock size={32} className="text-emerald-600" />
                 </div>
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tight">ALFAL.ID</h1>
                 <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed px-2 md:px-4">
@@ -1061,7 +1086,9 @@
                     Nama Lengkap
                   </label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+                      <User size={18} />
+                    </div>
                     <input 
                       type="text" 
                       placeholder="Nama Lengkap Peserta" 
@@ -1078,7 +1105,9 @@
                     Token Akses
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+                      <Lock size={18} />
+                    </div>
                     <input 
                       type="password" 
                       placeholder="Token Keamanan (123)" 
@@ -1112,17 +1141,15 @@
       return (
         <div className="min-h-screen bg-[#F8FAFC] flex text-slate-800 font-sans relative">
           
-          {/* Notifikasi Peringatan Khusus Pengguna iPhone/Safari */}
           {showIosHint && (
             <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-xs md:text-sm text-center w-[90%] max-w-sm border-2 border-blue-400 transition-all">
               📱 Pengguna Safari/iPhone:<br/>Pastikan <b>Tombol Mute/Hening</b> di samping HP Anda <b>dimatikan</b> agar suara mufrodat terdengar!
             </div>
           )}
 
-          {/* Sidebar (Desktop Only) */}
           <aside className={`hidden md:flex ${isSidebarOpen ? 'w-72' : 'w-20'} bg-white border-r border-slate-100 transition-all duration-300 flex-col no-print`}>
             <div className="p-8 flex items-center space-x-3">
-              <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-inner">
+              <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-inner shrink-0">
                 A
               </div>
               <span className={`text-xl font-black text-emerald-900 tracking-tight ${!isSidebarOpen && 'hidden'}`}>
@@ -1150,12 +1177,11 @@
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
                 className="w-full py-2 bg-slate-50 rounded-xl text-slate-400 flex justify-center hover:text-emerald-600 transition-colors"
               >
-                <ChevronRight className={`transition-transform ${isSidebarOpen ? 'rotate-180' : ''}`} />
+                <ChevronRight size={18} className={`transition-transform ${isSidebarOpen ? 'rotate-180' : ''}`} />
               </button>
             </div>
           </aside>
 
-          {/* Bottom Navigation (Mobile Only) */}
           <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 flex justify-around px-2 pt-2 pb-safe z-50 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] no-print">
             {[
               { id: 'home', icon: Home, label: 'Beranda' },
@@ -1172,7 +1198,7 @@
                   onClick={() => { setActiveTab(item.id); if (item.id !== 'home' && quizStep !== 0) setQuizStep(0); }}
                   className={`flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}
                 >
-                  <div className={`p-1.5 rounded-lg mb-1 ${isActive ? 'bg-emerald-50' : ''}`}>
+                  <div className={`p-1.5 rounded-lg mb-1 flex items-center justify-center ${isActive ? 'bg-emerald-50' : ''}`}>
                     <IconComponent size={20} />
                   </div>
                   <span className="text-[10px] font-black">{item.label}</span>
@@ -1181,7 +1207,6 @@
             })}
           </nav>
 
-          {/* Main Content */}
           <main className="flex-1 h-screen overflow-y-auto p-4 md:p-10 pb-24 md:pb-10 relative">
             
             <header className="flex justify-between items-center mb-8 md:mb-10 no-print">
@@ -1200,49 +1225,49 @@
                    Misi Aktif: Hari {selectedDay}
                  </span>
               </div>
-              {/* Tombol Logout Khusus HP */}
-              <button onClick={handleLogout} className="md:hidden p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
+              <button onClick={handleLogout} className="md:hidden flex items-center justify-center p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
                 <LogOut size={18} />
               </button>
             </header>
 
-            {/* Tab Beranda */}
             {activeTab === 'home' && (
               <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-6">
-                  {Object.keys(MUFRODAT_DB).map((day) => (
-                    <div 
-                      key={day} 
-                      className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 ${selectedDay === Number(day) ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-white text-slate-800 border border-slate-100'}`}
-                    >
-                      <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                          <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay === Number(day) ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-100 text-slate-500'}`}>
-                            HARI {day}
-                          </span>
-                          {myScores.some(s => s.day === Number(day) && s.score >= 80) && (
-                            <CheckCircle className={selectedDay === Number(day) ? "text-emerald-200" : "text-emerald-500"} size={20} />
-                          )}
+                  {Object.keys(MUFRODAT_DB).map((day) => {
+                    const dayNum = Number(day);
+                    return (
+                      <div 
+                        key={day} 
+                        className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 ${selectedDay === dayNum ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-white text-slate-800 border border-slate-100'}`}
+                      >
+                        <div className="relative z-10">
+                          <div className="flex justify-between items-start mb-4">
+                            <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay === dayNum ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-100 text-slate-500'}`}>
+                              HARI {day}
+                            </span>
+                            {myScores.some(s => Number(s.day) === dayNum && s.score >= 80) && (
+                              <CheckCircle className={selectedDay === dayNum ? "text-emerald-200" : "text-emerald-500"} size={20} />
+                            )}
+                          </div>
+                          <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay === dayNum ? '#a7f3d0' : '#047857' }}>
+                            {MUFRODAT_DB[day].titleAr}
+                          </h3>
+                          <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay === dayNum ? 'text-emerald-100' : 'text-slate-500'}`}>
+                            {MUFRODAT_DB[day].title}
+                          </h2>
+                          <button 
+                            onClick={() => { setSelectedDay(dayNum); setActiveTab('materi'); window.scrollTo(0,0); }}
+                            className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 ${selectedDay === dayNum ? 'bg-white text-emerald-700 hover:bg-emerald-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                          >
+                            Pilih Misi {day}
+                          </button>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay === Number(day) ? '#a7f3d0' : '#047857' }}>
-                          {MUFRODAT_DB[day].titleAr}
-                        </h3>
-                        <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay === Number(day) ? 'text-emerald-100' : 'text-slate-500'}`}>
-                          {MUFRODAT_DB[day].title}
-                        </h2>
-                        <button 
-                          onClick={() => { setSelectedDay(parseInt(day)); setActiveTab('materi'); window.scrollTo(0,0); }}
-                          className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 ${selectedDay === Number(day) ? 'bg-white text-emerald-700 hover:bg-emerald-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                        >
-                          Pilih Misi {day}
-                        </button>
+                        <div className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 flex items-center justify-center ${selectedDay === dayNum ? 'text-white' : 'text-slate-900'}`}>
+                          <BookOpen size={100} />
+                        </div>
                       </div>
-                      <BookOpen 
-                        className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 ${selectedDay === Number(day) ? 'text-white' : 'text-slate-900'}`} 
-                        size={100} 
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-slate-100 shadow-sm">
@@ -1274,19 +1299,16 @@
               </div>
             )}
 
-            {/* Tab Materi */}
             {activeTab === 'materi' && (
               <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 sm:grid-cols-3 items-center bg-emerald-50 p-5 md:p-6 rounded-[2rem] md:rounded-3xl border border-emerald-100 mb-4 md:mb-6 gap-4">
                   
-                  {/* Bagian Kiri: Label Hari */}
                   <div className="flex justify-start sm:self-start">
                     <h2 className="text-xs md:text-sm font-black text-emerald-700 uppercase tracking-widest bg-emerald-100/70 px-3 py-1.5 rounded-lg border border-emerald-200">
                       Materi Hari {selectedDay}
                     </h2>
                   </div>
                   
-                  {/* Bagian Tengah: Judul & Arti Arab */}
                   <div className="flex flex-col items-center text-center">
                     <span className="font-arabic font-bold text-4xl md:text-5xl text-emerald-900 mb-2" dir="rtl">
                       {MUFRODAT_DB[selectedDay].titleAr}
@@ -1296,7 +1318,6 @@
                     </p>
                   </div>
                   
-                  {/* Bagian Kanan: Tombol Setor */}
                   <div className="flex justify-end sm:self-center mt-2 sm:mt-0">
                     <button 
                       onClick={() => {setActiveTab('rekam'); window.scrollTo(0,0);}} 
@@ -1305,7 +1326,6 @@
                       <Mic size={18}/> Setor Hafalan
                     </button>
                   </div>
-
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -1317,7 +1337,7 @@
                         </div>
                         <button 
                           onClick={() => playAudio(item.arab)}
-                          className="p-2.5 md:p-3 bg-emerald-50 text-emerald-600 rounded-full hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 active:scale-95 transition-all shadow-sm"
+                          className="flex items-center justify-center p-2.5 md:p-3 bg-emerald-50 text-emerald-600 rounded-full hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 active:scale-95 transition-all shadow-sm"
                           title="Dengarkan Cara Baca"
                         >
                           <Volume2 size={20} className="md:w-6 md:h-6" />
@@ -1340,11 +1360,8 @@
               </div>
             )}
 
-            {/* Tab Rekam Hafalan */}
             {activeTab === 'rekam' && (
               <div className="max-w-2xl mx-auto pb-10">
-                
-                {/* Step 0: Pemanasan Suara (Speech Recognition Quiz) */}
                 {rekamStep === 0 && voiceQuizList.length > 0 && (
                   <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center relative overflow-hidden animate-in fade-in duration-500">
                     
@@ -1402,7 +1419,6 @@
                   </div>
                 )}
 
-                {/* Step 1: Setor Hafalan Utama */}
                 {rekamStep === 1 && (
                   <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-emerald-50">
@@ -1460,10 +1476,8 @@
               </div>
             )}
 
-            {/* Tab Kuis */}
             {activeTab === 'quiz' && (
               <div className="max-w-2xl mx-auto pb-10">
-                {/* Step 0: Layar Mulai */}
                 {quizStep === 0 && (
                    <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
                      <div className="w-20 h-20 md:w-24 md:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-orange-50">
@@ -1485,7 +1499,6 @@
                    </div>
                 )}
 
-                {/* Step 1: Layar Pertanyaan */}
                 {quizStep === 1 && (
                    <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-xl md:shadow-2xl relative overflow-hidden">
                      
@@ -1501,7 +1514,6 @@
                      </div>
 
                      {currentQuestion % 2 === 0 ? (
-                       // Pilihan Ganda
                        <div className="text-center animate-in fade-in duration-300" key={`mc-${currentQuestion}`}>
                          <p className="text-xs md:text-sm font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Apa arti kata ini?</p>
                          <h1 className="text-5xl md:text-6xl font-arabic font-bold text-slate-800 mb-10 pb-2">{currentMufrodatList[currentQuestion].arab}</h1>
@@ -1524,7 +1536,6 @@
                          </div>
                        </div>
                      ) : (
-                       // Permainan Susun Huruf
                        <div className="text-center animate-in slide-in-from-right-8 duration-300" key={`sc-${currentQuestion}`}>
                          <p className="text-xs md:text-sm font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Susun Huruf Untuk Arti:</p>
                          <h2 className="text-2xl md:text-4xl font-black text-emerald-600 mb-8 md:mb-10 tracking-tight">
@@ -1582,7 +1593,6 @@
                    </div>
                 )}
 
-                {/* Step 2: Layar "Kirim Kuis" Terpisah */}
                 {quizStep === 2 && (
                    <div className="bg-white p-10 md:p-14 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 shadow-xl md:shadow-2xl text-center fade-in-up">
                      <div className="w-24 h-24 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-blue-50">
@@ -1600,7 +1610,6 @@
                    </div>
                 )}
 
-                {/* Step 3: Result / Barakallahu Fiikum */}
                 {quizStep === 3 && (
                    <div className="bg-white p-8 md:p-16 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in zoom-in-95">
                      <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-5 md:mb-6">
@@ -1637,7 +1646,6 @@
               </div>
             )}
 
-            {/* Tab Riwayat */}
             {activeTab === 'riwayat' && (
               <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-500 mb-10">
                 <div className="p-6 md:p-8 border-b border-slate-50 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
