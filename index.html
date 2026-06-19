@@ -2,10 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <!-- Mencegah zoom otomatis di HP saat mengetik (Penting untuk UI mirip aplikasi asli) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
-  <!-- PWA & Mobile App Meta Tags -->
   <meta name="theme-color" content="#059669">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,65 +12,41 @@
   
   <title>Alfal.id | Belajar Bahasa Arab</title>
   
-  <!-- Web App Manifest (Untuk Add to Home Screen) -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Alfal.id Belajar Arab","short_name":"Alfal","start_url":".","display":"standalone","background_color":"#F8FAFC","theme_color":"#059669","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzA1OTY2OSIvPjx0ZXh0IHg9IjUwIiB5PSI2NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjUwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD48L3N2Zz4=","sizes":"192x192","type":"image/svg+xml"}]}'>
-  
-  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Global Styles -->
   <style>
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
       background: #F8FAFC; 
-      /* Mencegah highlight biru saat tap di Android */
       -webkit-tap-highlight-color: transparent;
-      /* Mencegah text selection tidak sengaja */
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    input, textarea {
-      /* Mengizinkan seleksi teks pada input */
-      -webkit-user-select: auto;
-      user-select: auto;
     }
     .font-arabic { 
       font-family: 'Amiri', serif; 
     }
     ::-webkit-scrollbar { 
-      width: 6px; 
+      width: 8px; 
     }
     ::-webkit-scrollbar-thumb { 
-      background: #cbd5e1; 
+      background: #e2e8f0; 
       border-radius: 10px; 
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    /* Safe Area untuk HP dengan notch (iPhone X ke atas) */
     .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom, 16px);
-    }
-    .pt-safe {
-      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
   </style>
 
-  <!-- Babel untuk kompilasi JSX di Browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Import Maps untuk ES Modules -->
   <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?external=react",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react",
         "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
@@ -80,12 +54,10 @@
     }
   </script>
 </head>
-<body class="overscroll-none">
+<body>
   
-  <!-- Container Utama React -->
   <div id="root"></div>
 
-  <!-- Script Logika Aplikasi -->
   <script type="text/babel" data-type="module">
     import React, { useState, useEffect, useRef } from 'react';
     import { createRoot } from 'react-dom/client';
@@ -107,35 +79,8 @@
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'alfal-mufrodat-pro-secure';
 
     // --- CONFIGURATION ---
-    const VALID_TOKEN = "67890"; 
-    
-    // GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA
+    const VALID_TOKEN = "09876"; 
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj9D5J53kOgOIEfXhGgcn3Vc2dvh0-ifxbVm1XIVjnQ2KYLvjDPgeX8P5FNh4QQtyPCg/exec"; 
-
-    // --- UTILITIES SINKRONISASI RIWAYAT MAKSIMAL ---
-    const getHistoryKey = (name) => {
-      if (!name) return 'alfal_history_unknown';
-      // Menghilangkan spasi & mengubah huruf menjadi kecil agar "Budi" dan "budi " tetap terbaca sama
-      return `alfal_history_${name.trim().toLowerCase()}`;
-    };
-
-    const syncLocalAndState = (name) => {
-      if (!name) return [];
-      const localKey = getHistoryKey(name);
-      const localData = JSON.parse(localStorage.getItem(localKey)) || [];
-      localData.sort((a, b) => b.timestamp - a.timestamp);
-      return localData;
-    };
-
-    const normalizeArabic = (text) => {
-      if (!text) return "";
-      return text
-        .replace(/[\u064B-\u065F\u0670]/g, '') // Hapus harakat
-        .replace(/[أإآ]/g, 'ا') // Normalisasi bentuk alif
-        .replace(/ة/g, 'ه') // Normalisasi ta marbuthoh ke ha (API Google sering membaca 'ha' di akhir)
-        .replace(/ى/g, 'ي') // Normalisasi alif maqsurah
-        .trim();
-    };
 
     // Database Mufrodat Berdasarkan Hari (1-30)
     const MUFRODAT_DB = {
@@ -150,7 +95,7 @@
           { id: 7, arab: "نَافِذَةٌ", latin: "Naafidzatun", arti: "Jendela", contoh: "أَفْتَحُ النَّافِذَةَ", deskripsi: "Lubang angin di dinding rumah." },
           { id: 8, arab: "مِصْبَاحٌ", latin: "Mishbaahun", arti: "Lampu", contoh: "أُشْعِلُ الْمِصْبَاحَ", deskripsi: "Sumber cahaya di dalam rumah." },
           { id: 9, arab: "سَاعَةٌ", latin: "Saa'atun", arti: "Jam", contoh: "أَنْظُرُ إِلَى السَّاعَةِ", deskripsi: "Alat untuk melihat waktu." },
-          { id: 10, arab: "كُرْسِيٌّ", latin: "Kursiyyun", arti: "Kursi", contoh: "أَجْلِسُ عَلَى الْكُرْسِيِّ", deskripsi: "Tempat duduk dari kayu atau besi." },
+          { id: 10, arab: "كُرْسِيٌّ", latin: "Kursiyyun", arti: "Kursi", contoh: "أَجْلِسُ عَلَى الْكُرْسِيِّ", deskripsi: "Tempat duduk dari kayu atau besi." }
         ]
       },
       2: {
@@ -164,7 +109,7 @@
           { id: 7, arab: "مِبْرَاةٌ", latin: "Mibraatun", arti: "Rautan", contoh: "أَبْرِي الْقَلَمَ بِالْمِبْرَاةِ", deskripsi: "Alat untuk menajamkan pensil." },
           { id: 8, arab: "مَقْعَدٌ", latin: "Maq'adun", arti: "Bangku", contoh: "أجْلِسُ عَلَى الْمَقْعَدِ", deskripsi: "Tempat duduk peserta di kelas." },
           { id: 9, arab: "مَكْتَبٌ", latin: "Maktabun", arti: "Meja", contoh: "أَضَعُ الْكِتَابَ عَلَى الْمَكْتَبِ", deskripsi: "Alas untuk menulis dan membaca." },
-          { id: 10, arab: "سَبُّوْرَةٌ", latin: "Sabburatun", arti: "Papan Tulis", contoh: "الْمُدَرِّسُ يَكْتُبُ عَلَى السَّبُّوْرَةِ", deskripsi: "Tempat ustadz menulis materi di depan kelas." },
+          { id: 10, arab: "سَبُّوْرَةٌ", latin: "Sabburatun", arti: "Papan Tulis", contoh: "الْمُدَرِّسُ يَكْتُبُ عَلَى السَّبُّوْرَةِ", deskripsi: "Tempat ustadz menulis materi di depan kelas." }
         ]
       },
       3: {
@@ -178,7 +123,7 @@
           { id: 7, arab: "أَرُزٌّ", latin: "Aruzzun", arti: "Nasi", contoh: "نَحْنُ نَأْكُلُ الأَرُزَّ كُلَّ يَوْمٍ", deskripsi: "Makanan utama orang Indonesia." },
           { id: 8, arab: "لَحْمٌ", latin: "Lahmun", arti: "Daging", contoh: "لَحْمُ الْبَقَرِ مُفِيْدٌ", deskripsi: "Sumber protein hewani." },
           { id: 9, arab: "سَمَكٌ", latin: "Samakun", arti: "Ikan", contoh: "السَّمَكُ يَعِيْشُ فِي الْمَاءِ", deskripsi: "Hewan air yang menyehatkan." },
-          { id: 10, arab: "حَلِيْبٌ", latin: "Halibun", arti: "Susu", contoh: "أَشْرَبُ الْحَلِيْبَ لِلصِّحَّةِ", deskripsi: "Minuman untuk kekuatan tulang." },
+          { id: 10, arab: "حَلِيْبٌ", latin: "Halibun", arti: "Susu", contoh: "أَشْرَبُ الْحَلِيْبَ لِلصِّحَّةِ", deskripsi: "Minuman untuk kekuatan tulang." }
         ]
       },
       4: {
@@ -192,7 +137,7 @@
           { id: 7, arab: "يَدٌ", latin: "Yadun", arti: "Tangan", contoh: "أَكْتُبُ بِيَدِي", deskripsi: "Anggota tubuh untuk memegang." },
           { id: 8, arab: "رِجْلٌ", latin: "Rijlun", arti: "Kaki", contoh: "أَمْشِي بِالرِّجْلِ", deskripsi: "Anggota tubuh untuk berjalan." },
           { id: 9, arab: "صَدْرٌ", latin: "Sadhrun", arti: "Dada", contoh: "هَذَا صَدْرٌ وَاسِعٌ", deskripsi: "Bagian depan tubuh bagian atas." },
-          { id: 10, arab: "بَطْنٌ", latin: "Bathnun", arti: "Perut", contoh: "بَطْنِي شَبْعَانُ", deskripsi: "Bagian tubuh tempat mencerna makanan." },
+          { id: 10, arab: "بَطْنٌ", latin: "Bathnun", arti: "Perut", contoh: "بَطْنِي شَبْعَانُ", deskripsi: "Bagian tubuh tempat mencerna makanan." }
         ]
       },
       5: {
@@ -206,7 +151,7 @@
           { id: 7, arab: "بُرْتُقَالِيٌّ", latin: "Burtuqaliyyun", arti: "Oranye", contoh: "الْجَزَرُ لَوْنُهُ بُرْتُقَالِيٌّ", deskripsi: "Warna campuran merah dan kuning." },
           { id: 8, arab: "وَرْدِيٌّ", latin: "Wardiyyun", arti: "Merah Muda", contoh: "الزَّهْرَةُ لَوْنُهَا وَرْدِيٌّ", deskripsi: "Warna yang lembut seperti mawar." },
           { id: 9, arab: "بُنِّيٌّ", latin: "Bunniyyun", arti: "Cokelat", contoh: "الْخَشَبُ لَوْنُهُ بُنِّيٌّ", deskripsi: "Warna seperti tanah atau kayu." },
-          { id: 10, arab: "رَمَادِيٌّ", latin: "Ramadiyyun", arti: "Abu-abu", contoh: "الدُّخَانُ لَوْنُهُ رَمَادِيٌّ", deskripsi: "Warna seperti asap atau awan mendung." },
+          { id: 10, arab: "رَمَادِيٌّ", latin: "Ramadiyyun", arti: "Abu-abu", contoh: "الدُّخَانُ لَوْنُهُ رَمَادِيٌّ", deskripsi: "Warna seperti asap atau awan mendung." }
         ]
       },
       6: {
@@ -220,7 +165,7 @@
           { id: 7, arab: "تَاجِرٌ", latin: "Tajirun", arti: "Pedagang", contoh: "التَّاجِرُ يَبِيْعُ الفَوَاكِهَ", deskripsi: "Orang yang berjual beli." },
           { id: 8, arab: "طَبَّاخٌ", latin: "Thabbakhun", arti: "Koki", contoh: "الطَّبَّاخُ يَطْبَخُ الطَّعَامَ", deskripsi: "Orang yang ahli memasak." },
           { id: 9, arab: "طَيَّارٌ", latin: "Thayyarun", arti: "Pilot", contoh: "الطَّيَّارُ يَقُوْدُ الطَّائِرَةَ", deskripsi: "Orang yang mengemudikan pesawat." },
-          { id: 10, arab: "سَائِقٌ", latin: "Sa-iqun", arti: "Sopir", contoh: "السَّائِقُ يَقُوْدُ السَّيَّارَةَ", deskripsi: "Orang yang mengemudikan kendaraan darat." },
+          { id: 10, arab: "سَائِقٌ", latin: "Sa-iqun", arti: "Sopir", contoh: "السَّائِقُ يَقُوْدُ السَّيَّارَةَ", deskripsi: "Orang yang mengemudikan kendaraan darat." }
         ]
       },
       7: {
@@ -234,7 +179,7 @@
           { id: 7, arab: "اِبْنٌ", latin: "Ibnun", arti: "Anak Laki-laki", contoh: "أَنَا اِبْنٌ صَالِحٌ", deskripsi: "Putra kandung." },
           { id: 8, arab: "بِنْتٌ", latin: "Bintun", arti: "Anak Perempuan", contoh: "هَذِهِ بِنْتِي الصَّغِيْرَةُ", deskripsi: "Putri kandung." },
           { id: 9, arab: "عَمٌّ", latin: "Ammun", arti: "Paman", contoh: "عَمِّي يَعْمَلُ فِي الْمَكْتَبِ", deskripsi: "Saudara laki-laki ayah." },
-          { id: 10, arab: "عَمَّةٌ", latin: "Ammatun", arti: "Bibi", contoh: "عَمَّتِي تَسْكُنُ فِي الْقَرْيَةِ", deskripsi: "Saudara perempuan ayah." },
+          { id: 10, arab: "عَمَّةٌ", latin: "Ammatun", arti: "Bibi", contoh: "عَمَّتِي تَسْكُنُ فِي الْقَرْيَةِ", deskripsi: "Saudara perempuan ayah." }
         ]
       },
       8: {
@@ -248,7 +193,7 @@
           { id: 7, arab: "هَذَانِ", latin: "Haadzaani", arti: "Ini berdua (L)", contoh: "هَذَانِ قَلَمَانِ", deskripsi: "Kata tunjuk dekat untuk dua benda/orang laki-laki." },
           { id: 8, arab: "هَاتَانِ", latin: "Haataani", arti: "Ini berdua (P)", contoh: "هَاتَانِ سَيَّارَتَانِ", deskripsi: "Kata tunjuk dekat untuk dua benda/orang perempuan." },
           { id: 9, arab: "هَؤُلَاءِ", latin: "Haa-ulaa-i", arti: "Mereka ini (Jamak)", contoh: "هَؤُلَاءِ أَصْدِقَائِي", deskripsi: "Kata tunjuk dekat untuk orang banyak (jamak)." },
-          { id: 10, arab: "أُولَئِكَ", latin: "Uulaa-ika", arti: "Mereka itu (Jamak)", contoh: "أُولَئِكَ مُدَرِّسُوْنَ", deskripsi: "Kata tunjuk jauh untuk orang banyak (jamak)." },
+          { id: 10, arab: "أُولَئِكَ", latin: "Uulaa-ika", arti: "Mereka itu (Jamak)", contoh: "أُولَئِكَ مُدَرِّسُوْنَ", deskripsi: "Kata tunjuk jauh untuk orang banyak (jamak)." }
         ]
       },
       9: {
@@ -262,7 +207,7 @@
           { id: 7, arab: "قِطَارٌ", latin: "Qithaaru", arti: "Kereta", contoh: "نُسَافِرُ بِالْقِطَارِ إِلَى الْمَدِيْنَةِ", deskripsi: "Kendaraan di atas rel." },
           { id: 8, arab: "شَاحِنَةٌ", latin: "Syaahinatun", arti: "Truk", contoh: "الشَّاحِنَةُ تَحْمِلُ الْبَضَائِعَ", deskripsi: "Kendaraan angkut barang." },
           { id: 9, arab: "مِرْوَحِيَّةٌ", latin: "Mirwahiyyatun", arti: "Helikopter", contoh: "الْمِرْوَحِيَّةُ fَوْقَ الْبُيُوْتِ", deskripsi: "Pesawat dengan baling-baling." },
-          { id: 10, arab: "قَارِبٌ", latin: "Qaaribun", arti: "Perahu", contoh: "الْقَارِبُ الصَّغِيْرُ فِي النَّهْرِ", deskripsi: "Kendaraan air kecil." },
+          { id: 10, arab: "قَارِبٌ", latin: "Qaaribun", arti: "Perahu", contoh: "الْقَارِبُ الصَّغِيْرُ فِي النَّهْرِ", deskripsi: "Kendaraan air kecil." }
         ]
       },
       10: {
@@ -276,7 +221,7 @@
           { id: 7, arab: "نَظِيْفٌ", latin: "Nazhiifun", arti: "Bersih", contoh: "الْفَصْلُ نَظِيْفٌ دَائِمًا", deskripsi: "Keadaan yang suci dari kotoran." },
           { id: 8, arab: "وَسِخٌ", latin: "Wasikhun", arti: "Kotor", contoh: "الثَّوْبُ وَسِخٌ الآنَ", deskripsi: "Keadaan yang terkena noda atau kotoran." },
           { id: 9, arab: "جَمِيْلٌ", latin: "Jamiilun", arti: "Indah/Tampan", contoh: "الْمَنْظَرُ جَمِيْلٌ جِدًّا", deskripsi: "Sesuatu yang elok dipandang mata." },
-          { id: 10, arab: "قَبِيْحٌ", latin: "Qabiihun", arti: "Jelek/Buruk", contoh: "الْخُلُقُ الْقَبِيْحُ مَذْمُوْمٌ", deskripsi: "Sesuatu yang tidak bagus kualitasnya." },
+          { id: 10, arab: "قَبِيْحٌ", latin: "Qabiihun", arti: "Jelek/Buruk", contoh: "الْخُلُقُ الْقَبِيْحُ مَذْمُوْمٌ", deskripsi: "Sesuatu yang tidak bagus kualitasnya." }
         ]
       },
       11: {
@@ -290,7 +235,7 @@
           { id: 7, arab: "فَصْلٌ", latin: "Fashlun", arti: "Kelas", contoh: "أَدْخُلُ الْفَصْلَ لِلدِّرَاسَةِ", deskripsi: "Ruangan tempat belajar di sekolah." },
           { id: 8, arab: "حَدِيْقَةٌ", latin: "Hadiiqatun", arti: "Taman", contoh: "أَلْعَبُ فِي الْحَدِيْقَةِ", deskripsi: "Tempat terbuka yang asri untuk bermain." },
           { id: 9, arab: "صَيْدَلِيَّةٌ", latin: "Shaidaliyyatun", arti: "Apotek", contoh: "أَشْتَرِي الدَّوَاءَ فِي الصَّيْدَلِيَّةِ", deskripsi: "Tempat membeli obat-obatan." },
-          { id: 10, arab: "مَطَارٌ", latin: "Mathaarun", arti: "Bandara", contoh: "نُسَافِرُ مِنَ الْمَطَارِ", deskripsi: "Tempat lepas landas pesawat terbang." },
+          { id: 10, arab: "مَطَارٌ", latin: "Mathaarun", arti: "Bandara", contoh: "نُسَافِرُ مِنَ الْمَطَارِ", deskripsi: "Tempat lepas landas pesawat terbang." }
         ]
       },
       12: {
@@ -304,7 +249,7 @@
           { id: 7, arab: "جَلَسَ", latin: "Jalasa", arti: "Duduk", contoh: "أَجْلِسُ عَلَى الْكُرْسِيِّ", deskripsi: "Meletakkan tubuh di atas kursi." },
           { id: 8, arab: "قَامَ", latin: "Qaama", arti: "Berdiri", contoh: "قَامَ الطَّالِبُ أَمَامَ الْفَصْلِ", deskripsi: "Bangkit dengan tegak di atas kaki." },
           { id: 9, arab: "نَامَ", latin: "Naama", arti: "Tidur", contoh: "أَنَا أَنَامُ فِي اللَّيْلِ", deskripsi: "Mengistirahatkan tubuh dan pikiran." },
-          { id: 10, arab: "دَخَلَ", latin: "Dakhala", arti: "Masuk", contoh: "أَدْخُلُ الْبَيْتَ بِسَلَامٍ", deskripsi: "Melangkah ke dalam suatu ruangan." },
+          { id: 10, arab: "دَخَلَ", latin: "Dakhala", arti: "Masuk", contoh: "أَدْخُلُ الْبَيْتَ بِسَلَامٍ", deskripsi: "Melangkah ke dalam suatu ruangan." }
         ]
       },
       13: {
@@ -318,7 +263,7 @@
           { id: 7, arab: "فُسْتَانٌ", latin: "Fustaanun", arti: "Gaun", contoh: "هَذَا فُسْتَانٌ طَوِيْلٌ", deskripsi: "Pakaian panjang terusan wanita." },
           { id: 8, arab: "حِزَامٌ", latin: "Hizaamun", arti: "Ikat Pinggang", contoh: "أَرْبِطُ الْحِزَامَ بِقُوَّةٍ", deskripsi: "Tali pengikat celana di pinggang." },
           { id: 9, arab: "رِبَاطُ الْعُنُقِ", latin: "Ribaathul 'Unuqi", arti: "Dasi", contoh: "أَلْبَسُ رِبَاطَ الْعُنُقِ", deskripsi: "Hiasan leher untuk pakaian formal." },
-          { id: 10, arab: "سَاعَةُ يَدٍ", latin: "Saa'atu Yadin", arti: "Jam Tangan", contoh: "سَاعَةُ يَدِي جَدِيْدَةٌ", deskripsi: "Penunjuk waktu yang dipakai di tangan." },
+          { id: 10, arab: "سَاعَةُ يَدٍ", latin: "Saa'atu Yadin", arti: "Jam Tangan", contoh: "سَاعَةُ يَدِي جَدِيْدَةٌ", deskripsi: "Penunjuk waktu yang dipakai di tangan." }
         ]
       },
       14: {
@@ -332,7 +277,7 @@
           { id: 7, arab: "صَيْدُ السَّمَكِ", latin: "Shaidus Samaki", arti: "Memancing Ikan", contoh: "أَذْهَبُ لِصَيْدِ السَّمَكِ فِي النَّهْرِ", deskripsi: "Kegiatan menangkap ikan." },
           { id: 8, arab: "تَصْوِيْرٌ", latin: "Tashwiirun", arti: "Fotografi", contoh: "التَّصْوِيْرُ هِوَايَةٌ جَمِيْلَةٌ", deskripsi: "Seni mengambil gambar dengan kamera." },
           { id: 9, arab: "رُكُوْبُ الدَّرَّاجَةِ", latin: "Rukuubud Darraajati", arti: "Bersepeda", contoh: "أَرْكَبُ الدَّرَّاجَةَ كُلَّ مَسَاءٍ", deskripsi: "Kegiatan mengayuh sepeda." },
-          { id: 10, arab: "غِنَاءٌ", latin: "Ghinaa-un", arti: "Menyanyi", contoh: "الْغِنَاءُ يُسْعِدُ النَّفْسَ", deskripsi: "Seni mengeluarkan suara merdu." },
+          { id: 10, arab: "غِنَاءٌ", latin: "Ghinaa-un", arti: "Menyanyi", contoh: "الْغِنَاءُ يُسْعِدُ النَّفْسَ", deskripsi: "Seni mengeluarkan suara merdu." }
         ]
       },
       15: {
@@ -346,7 +291,7 @@
           { id: 7, arab: "بَحْرٌ", latin: "Bahrun", arti: "Laut", contoh: "الْمَاءُ فِي الْبَحْرِ مَالِحٌ", deskripsi: "Kumpulan air asin yang sangat luas." },
           { id: 8, arab: "مَطَرٌ", latin: "Matharun", arti: "Hujan", contoh: "الْمَطَرُ يَنْزِلُ مِنَ السَّمَاءِ", deskripsi: "Titik-titik air yang jatuh dari awan." },
           { id: 9, arab: "رِيْحٌ", latin: "Riihun", arti: "Angin", contoh: "الرِّيْحُ قَوِيَّةٌ الْيَوْمَ", deskripsi: "Udara yang bergerak." },
-          { id: 10, arab: "شَجَرَةٌ", latin: "Syajaratun", arti: "Pohon", contoh: "هَذِهِ شَجَرَةٌ خَضْرَاءُ", deskripsi: "Tumbuhan berkayu yang tinggi." },
+          { id: 10, arab: "شَجَرَةٌ", latin: "Syajaratun", arti: "Pohon", contoh: "هَذِهِ شَجَرَةٌ خَضْرَاءُ", deskripsi: "Tumbuhan berkayu yang tinggi." }
         ]
       },
       16: {
@@ -360,7 +305,7 @@
           { id: 7, arab: "قِدْرٌ", latin: "Qidrun", arti: "Panci", contoh: "الطَّعَامُ فِي الْقِدْرِ سَاخِنٌ", deskripsi: "Wadah masak yang dalam." },
           { id: 8, arab: "مِغْرَفَةٌ", latin: "Mighrafatun", arti: "Sendok Sayur", contoh: "أَسْتَعْمِلُ الْمِغْرَفَةَ لِلْحِسَاءِ", deskripsi: "Sendok besar untuk kuah sayur." },
           { id: 9, arab: "فِنْجَانٌ", latin: "Finjaanun", arti: "Cangkir", contoh: "أَشْرَبُ القَهْوَةَ فِي الْفِنْجَانِ", deskripsi: "Gelas kecil biasanya untuk kopi/teh." },
-          { id: 10, arab: "سَفْرَةٌ", latin: "Safratun", arti: "Meja Makan", contoh: "نَجْلِسُ حَوْلَ السَّفْرَةِ", deskripsi: "Tempat menghidangkan makanan." },
+          { id: 10, arab: "سَفْرَةٌ", latin: "Safratun", arti: "Meja Makan", contoh: "نَجْلِسُ حَوْلَ السَّفْرَةِ", deskripsi: "Tempat menghidangkan makanan." }
         ]
       },
       17: {
@@ -374,7 +319,7 @@
           { id: 7, arab: "ثَانِيَةٌ", latin: "Thaaniyatun", arti: "Detik", contoh: "مَرَّتْ ثَانِيَةٌ سَرِيْعَةٌ", deskripsi: "Satuan waktu terkecil dalam jam." },
           { id: 8, arab: "أُسْبُوْعٌ", latin: "Usbuu'un", arti: "Minggu", contoh: "فِي الأُسْبُوْعِ سَبْعَةُ أَيَّامٍ", deskripsi: "Kumpulan waktu selama tujuh hari." },
           { id: 9, arab: "شَهْرٌ", latin: "Syahrun", arti: "Bulan", contoh: "نَحْنُ فِي شَهْرِ رَمَضَانَ", deskripsi: "Kumpulan waktu sekitar 30 hari." },
-          { id: 10, arab: "سَنَةٌ", latin: "Sanatun", arti: "Tahun", contoh: "فِي السَّنَةِ اِثْنَا عَشَرَ شَهْرًا", deskripsi: "Kumpulan waktu selama 12 bulan." },
+          { id: 10, arab: "سَنَةٌ", latin: "Sanatun", arti: "Tahun", contoh: "فِي السَّنَةِ اِثْنَا عَشَرَ شَهْرًا", deskripsi: "Kumpulan waktu selama 12 bulan." }
         ]
       },
       18: {
@@ -388,7 +333,7 @@
           { id: 7, arab: "حَنَفِيَّةٌ", latin: "Hanafiyyah", arti: "Kran Air", contoh: "أَفْتَحُ الْحَنَفِيَّةَ", deskripsi: "Alat pengatur keluarnya air." },
           { id: 8, arab: "مِغْرَفَةُ الْمَاءِ", latin: "Mighrafatul Ma-i", arti: "Gayung", contoh: "آخُذُ الْمَاءَ بِالْمِغْرَفَةِ", deskripsi: "Alat untuk mengambil air dari bak." },
           { id: 9, arab: "مِرْآةٌ", latin: "Mir-atun", arti: "Cermin", contoh: "أَنْظُرُ إِلَى الْمِرْآةِ", deskripsi: "Benda untuk melihat pantulan diri." },
-          { id: 10, arab: "مُشْطٌ", latin: "Musythun", arti: "Sisir", contoh: "أُمَشِّطُ شَعْرِي بِالْمُشْطِ", deskripsi: "Alat untuk merapikan rambut." },
+          { id: 10, arab: "مُشْطٌ", latin: "Musythun", arti: "Sisir", contoh: "أُمَشِّطُ شَعْرِي بِالْمُشْطِ", deskripsi: "Alat untuk merapikan rambut." }
         ]
       },
       19: {
@@ -402,7 +347,7 @@
           { id: 7, arab: "يَسَارٌ", latin: "Yasaarun", arti: "Kiri", contoh: "انْظُرْ إِلَى الْيَسَارِ", deskripsi: "Arah yang berlawanan dengan kanan." },
           { id: 8, arab: "بَيْنَ", latin: "Baina", arti: "Di antara", contoh: "الْكِتَابُ بَيْنَ الْمِرْسَمَةِ وَالْمِسْطَرَةِ", deskripsi: "Posisi berada di tengah-tengah dua benda." },
           { id: 9, arab: "فِي", latin: "Fii", arti: "Di dalam", contoh: "الْقَلَمُ فِي الْحَقِيْبَةِ", deskripsi: "Posisi berada di bagian interior." },
-          { id: 10, arab: "عَلَى", latin: "Alaa", arti: "Di atas (menempel)", contoh: "الْكِتَابُ عَلَى الْمَكْتَبِ", deskripsi: "Posisi berada di atas permukaan benda." },
+          { id: 10, arab: "عَلَى", latin: "Alaa", arti: "Di atas (menempel)", contoh: "الْكِتَابُ عَلَى الْمَكْتَبِ", deskripsi: "Posisi berada di atas permukaan benda." }
         ]
       },
       20: {
@@ -416,7 +361,7 @@
           { id: 7, arab: "كَمْ", latin: "Kam", arti: "Berapa", contoh: "كَمْ سَاعَةً؟", deskripsi: "Kata tanya untuk menanyakan jumlah/harga." },
           { id: 8, arab: "أَيُّ", latin: "Ayyu", arti: "Yang mana", contoh: "أَيُّ كِتَابٍ هَذَا؟", deskripsi: "Kata tanya untuk menanyakan pilihan." },
           { id: 9, arab: "هَلْ", latin: "Hal", arti: "Apakah", contoh: "هَلْ أَنْتَ طَالِبٌ؟", deskripsi: "Kata tanya untuk konfirmasi (Ya/Tidak)." },
-          { id: 10, arab: "مِنْ أَيْنَ", latin: "Min Aina", arti: "Dari mana", contoh: "مِنْ أَيْنَ أَنْتَ؟", deskripsi: "Kata tanya untuk menanyakan asal." },
+          { id: 10, arab: "مِنْ أَيْنَ", latin: "Min Aina", arti: "Dari mana", contoh: "مِنْ أَيْنَ أَنْتَ؟", deskripsi: "Kata tanya untuk menanyakan asal." }
         ]
       },
       21: {
@@ -430,7 +375,7 @@
           { id: 7, arab: "هُوَ", latin: "Huwa", arti: "Dia (L)", contoh: "هُوَ أُسْتَاذٌ", deskripsi: "Kata ganti orang ketiga laki-laki tunggal." },
           { id: 8, arab: "هِيَ", latin: "Hiya", arti: "Dia (P)", contoh: "هِيَ أُمِّي", deskripsi: "Kata ganti orang ketiga perempuan tunggal." },
           { id: 9, arab: "هُمْ", latin: "Hum", arti: "Mereka (L)", contoh: "هُمْ أَصْدِقَائِي", deskripsi: "Kata ganti orang ketiga laki-laki jamak." },
-          { id: 10, arab: "هُنَّ", latin: "Hunna", arti: "Mereka (P)", contoh: "هُنَّ فِي الْمَدْرَسَةِ", deskripsi: "Kata ganti orang ketiga perempuan jamak." },
+          { id: 10, arab: "هُنَّ", latin: "Hunna", arti: "Mereka (P)", contoh: "هُنَّ فِي الْمَدْرَسَةِ", deskripsi: "Kata ganti orang ketiga perempuan jamak." }
         ]
       },
       22: {
@@ -444,7 +389,7 @@
           { id: 7, arab: "خِيَارٌ", latin: "Khiyaarun", arti: "Mentimun", contoh: "أَصْنَعُ السَّلَطَةَ بِالْخِيَارِ", deskripsi: "Sayuran hijau panjang yang menyegarkan." },
           { id: 8, arab: "بَاذِنْجَانٌ", latin: "Baadzijaanun", arti: "Terong", contoh: "لَوْنُ الْبَاذِنْجَانِ بَنَفْسَجِيٌّ", deskripsi: "Sayuran berkulit ungu." },
           { id: 9, arab: "سَبَانِخُ", latin: "Sabaanikhu", arti: "Bayam", contoh: "السَّبَانِخُ يُقَوِّي الْجِسْمَ", deskripsi: "Sayuran berdaun hijau yang kaya zat besi." },
-          { id: 10, arab: "مَلْفُوْفٌ", latin: "Malfuufun", arti: "Kubis", contoh: "أُمِّي تَطْبَخُ الْمَلْفُوْفَ", deskripsi: "Sayuran berdaun tebal yang berlapis-lapis." },
+          { id: 10, arab: "مَلْفُوْفٌ", latin: "Malfuufun", arti: "Kubis", contoh: "أُمِّي تَطْبَخُ الْمَلْفُوْفَ", deskripsi: "Sayuran berdaun tebal yang berlapis-lapis." }
         ]
       },
       23: {
@@ -458,7 +403,7 @@
           { id: 7, arab: "مَخْرُوْطٌ", latin: "Makhruuthun", arti: "Kerucut", contoh: "قُبَّعَةُ الْحَفْلَةِ مَخْرُوْطٌ", deskripsi: "Bentuk seperti topi ulang tahun atau tumpeng." },
           { id: 8, arab: "أُسْطُوَانَةٌ", latin: "Usthuwaanatun", arti: "Tabung", contoh: "الْكُوْبُ شَكْلُهُ أُسْطُوَانَةٌ", deskripsi: "Bangun ruang seperti gelas atau pipa." },
           { id: 9, arab: "بَيْضَوِيٌّ", latin: "Baidhawiyyun", arti: "Oval", contoh: "الْبَيْضَةُ شَكْلُهَا بَيْضَوِيٌّ", deskripsi: "Bentuk yang menyerupai telur." },
-          { id: 10, arab: "خَطٌّ", latin: "Khaththun", arti: "Garis", contoh: "أَرْسُمُ خَطًّا بِالْمِسْطَرَةِ", deskripsi: "Coretan panjang yang lurus." },
+          { id: 10, arab: "خَطٌّ", latin: "Khaththun", arti: "Garis", contoh: "أَرْسُمُ خَطًّا بِالْمِسْطَرَةِ", deskripsi: "Coretan panjang yang lurus." }
         ]
       },
       24: {
@@ -472,7 +417,7 @@
           { id: 7, arab: "حَوْضٌ", latin: "Haudhun", arti: "Wastafel", contoh: "أَغْسِلُ الصُّحُوْنَ فِي الْحَوْضِ", deskripsi: "Tempat mencuci piring dan peralatan dapur." },
           { id: 8, arab: "كِبْرِيْتٌ", latin: "Kibriitun", arti: "Korek Api", contoh: "أُشْعِلُ النَّارَ بِالْكِبْرِيْتِ", deskripsi: "Alat pemantik api berukuran kecil." },
           { id: 9, arab: "مِصْفَاةٌ", latin: "Mishfaatun", arti: "Saringan", contoh: "أُصَفِّي الشَّايَ بِالْمِصْفَاةِ", deskripsi: "Alat pemisah cairan dari ampas." },
-          { id: 10, arab: "سَلَّةٌ", latin: "Sallatun", arti: "Keranjang", contoh: "أَضَعُ الْفَوَاكِهَ فِي السَّلَّةِ", deskripsi: "Wadah anyaman untuk menaruh barang." },
+          { id: 10, arab: "سَلَّةٌ", latin: "Sallatun", arti: "Keranjang", contoh: "أَضَعُ الْفَوَاكِهَ فِي السَّلَّةِ", deskripsi: "Wadah anyaman untuk menaruh barang." }
         ]
       },
       25: {
@@ -486,7 +431,7 @@
           { id: 7, arab: "مَطْبَخٌ", latin: "Mathbakhun", arti: "Dapur", contoh: "أُمِّي فِي الْمَطْبَخِ الآنَ", deskripsi: "Ruangan khusus untuk memasak makanan." },
           { id: 8, arab: "حَمَّامٌ", latin: "Hammaamun", arti: "Kamar Mandi", contoh: "أَغْتَسِلُ فِي الْحَمَّامِ", deskripsi: "Ruangan untuk membersihkan diri." },
           { id: 9, arab: "غُرْفَةُ النَّوْمِ", latin: "Ghurfatun Naumi", arti: "Kamar Tidur", contoh: "أَنَامُ فِي غُرْفَةِ النَّوْمِ", deskripsi: "Ruangan tertutup untuk istirahat dan tidur." },
-          { id: 10, arab: "غُرْفَةُ الجُلُوْسِ", latin: "Ghurfatul Juluusi", arti: "Ruang Tamu", contoh: "نَسْتَقْبِلُ الضَّيْفَ فِي غُرْفَةِ الْجُلُوْسِ", deskripsi: "Ruangan depan untuk menyambut tamu." },
+          { id: 10, arab: "غُرْفَةُ الجُلُوْسِ", latin: "Ghurfatul Juluusi", arti: "Ruang Tamu", contoh: "نَسْتَقْبِلُ الضَّيْفَ فِي غُرْفَةِ الْجُلُوْسِ", deskripsi: "Ruangan depan untuk menyambut tamu." }
         ]
       },
       26: {
@@ -500,7 +445,7 @@
           { id: 7, arab: "حُقْنَةٌ", latin: "Huqnatun", arti: "Suntikan", contoh: "الطَّبِيْبُ يُعْطِيْهِ حُقْنَةً", deskripsi: "Alat medis yang memiliki jarum tajam." },
           { id: 8, arab: "دَمٌ", latin: "Damun", arti: "Darah", contoh: "خَرَجَ الدَّمُ مِنَ الْجُرْحِ", deskripsi: "Cairan berwarna merah di dalam tubuh." },
           { id: 9, arab: "صِحَّةٌ", latin: "Shihhatun", arti: "Kesehatan", contoh: "الصِّحَّةُ تَاجٌ عَلَى الرُّؤُوْسِ", deskripsi: "Keadaan tubuh yang baik dan tidak sakit." },
-          { id: 10, arab: "مَرِيْضٌ", latin: "Mariidhun", arti: "Pasien", contoh: "الْمَرِيْضُ يَنَامُ فِي الْمُسْتَشْفَى", deskripsi: "Orang yang sedang menderita sakit." },
+          { id: 10, arab: "مَرِيْضٌ", latin: "Mariidhun", arti: "Pasien", contoh: "الْمَرِيْضُ يَنَامُ فِي الْمُسْتَشْفَى", deskripsi: "Orang yang sedang menderita sakit." }
         ]
       },
       27: {
@@ -514,7 +459,7 @@
           { id: 7, arab: "مُنَظِّفٌ", latin: "Munazhzhifun", arti: "Pembersih", contoh: "أَسْتَخْدِمُ الْمُنَظِّفَ لِلزُّجَاجِ", deskripsi: "Cairan kimia untuk menghilangkan noda." },
           { id: 8, arab: "إِسْفَنْجَةٌ", latin: "Isfanjatun", arti: "Spons", contoh: "أَغْسِلُ الصُّحُوْنَ بِالْإِسْفَنْجَةِ", deskripsi: "Benda berongga empuk untuk menyabun piring." },
           { id: 9, arab: "قُمَامَةٌ", latin: "Qumaamatun", arti: "Sampah", contoh: "لَا تَرْمِ الْقُمَامَةَ فِي النَّهْرِ", deskripsi: "Barang-barang buangan yang sudah tidak terpakai." },
-          { id: 10, arab: "غُبَارٌ", latin: "Ghubaarun", arti: "Debu", contoh: "فِي هَذَا الْمَكَانِ غُبَارٌ كَثِيْرٌ", deskripsi: "Partikel kotoran yang sangat kecil beterbangan." },
+          { id: 10, arab: "غُبَارٌ", latin: "Ghubaarun", arti: "Debu", contoh: "فِي هَذَا الْمَكَانِ غُبَارٌ كَثِيْرٌ", deskripsi: "Partikel kotoran yang sangat kecil beterbangan." }
         ]
       },
       28: {
@@ -528,7 +473,7 @@
           { id: 7, arab: "فَأْسٌ", latin: "Fa'sun", arti: "Kapak", contoh: "الْحَطَّابُ يَحْمِلُ الْفَأْسَ", deskripsi: "Alat pemotong kayu yang besar dan berat." },
           { id: 8, arab: "مِجْرَفَةٌ", latin: "Mijrafatun", arti: "Sekop", contoh: "أَحْفِرُ الْأَرْضَ بِالْمِجْرَفَةِ", deskripsi: "Alat untuk menggali tanah atau pasir." },
           { id: 9, arab: "حَبْلٌ", latin: "Hablun", arti: "Tali", contoh: "أَرْبِطُ الصُّنْدُوْقَ بِالْحَبْلِ", deskripsi: "Benda panjang fleksibel untuk mengikat sesuatu." },
-          { id: 10, arab: "مِقَصٌّ", latin: "Miqashshun", arti: "Gunting", contoh: "أَقُصُّ الْوَرَقَ بِالْمِقَصِّ", deskripsi: "Alat berpisau silang untuk memotong benda tipis." },
+          { id: 10, arab: "مِقَصٌّ", latin: "Miqashshun", arti: "Gunting", contoh: "أَقُصُّ الْوَرَقَ بِالْمِقَصِّ", deskripsi: "Alat berpisau silang untuk memotong benda tipis." }
         ]
       },
       29: {
@@ -542,7 +487,7 @@
           { id: 7, arab: "صُرْصُوْرٌ", latin: "Shurshuurun", arti: "Kecoa", contoh: "أَخَافُ مِنَ الصُّرْصُوْرِ", deskripsi: "Serangga berwarna cokelat yang bisa merayap cepat." },
           { id: 8, arab: "جَرَادَةٌ", latin: "Jaraadatun", arti: "Belalang", contoh: "الْجَرَادَةُ تَقْفِزُ فِي الْحَدِيْقَةِ", deskripsi: "Serangga pelompat pemakan daun-daunan." },
           { id: 9, arab: "دُوْدَةٌ", latin: "Duudatun", arti: "Ulat", contoh: "الدُّوْدَةُ تَأْكُلُ وَرَقَ الشَّجَرِ", deskripsi: "Hewan kecil tak berkaki yang memakan daun." },
-          { id: 10, arab: "حَلَزُوْنٌ", latin: "Halazuunun", arti: "Siput", contoh: "الْحَلَزُوْنُ يَمْشِي بِبُطْءٍ", deskripsi: "Hewan lunak bercangkang yang berjalan sangat lambat." },
+          { id: 10, arab: "حَلَزُوْنٌ", latin: "Halazuunun", arti: "Siput", contoh: "الْحَلَزُوْنُ يَمْشِي بِبُطْءٍ", deskripsi: "Hewan lunak bercangkang yang berjalan sangat lambat." }
         ]
       },
       30: {
@@ -556,7 +501,7 @@
           { id: 7, arab: "دَجَاجَةٌ", latin: "Dajaajatun", arti: "Ayam", contoh: "الدَّجَاجَةُ تَبِيْضُ كُلَّ يَوْمٍ", deskripsi: "Unggas penghasil telur." },
           { id: 8, arab: "أَرْنَبٌ", latin: "Arnabun", arti: "Kelinci", contoh: "الأَرْنَبُ يُحِبُّ الْجَزَرَ", deskripsi: "Hewan bertelinga panjang." },
           { id: 9, arab: "غَنَمٌ", latin: "Ghanamun", arti: "Kambing", contoh: "الْغَنَمُ يَأْكُلُ الْعُشْبَ", deskripsi: "Hewan ternak pemakan rumput." },
-          { id: 10, arab: "طَائِرٌ", latin: "Thaa-irun", arti: "Burung", contoh: "الطَّائِرُ يَطِيْرُ فِي السَّمَاءِ", deskripsi: "Hewan bersayap." },
+          { id: 10, arab: "طَائِرٌ", latin: "Thaa-irun", arti: "Burung", contoh: "الطَّائِرُ يَطِيْرُ فِي السَّمَاءِ", deskripsi: "Hewan bersayap." }
         ]
       }
     };
@@ -564,11 +509,7 @@
     const App = () => {
       const [user, setUser] = useState(null);
       const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('alfal_session_name'));
-      
-      const [participantName, setParticipantName] = useState(() => {
-        return localStorage.getItem('alfal_session_name') || "";
-      });
-      
+      const [participantName, setParticipantName] = useState(() => localStorage.getItem('alfal_session_name') || "");
       const [inputToken, setInputToken] = useState("");
       const [loginError, setLoginError] = useState("");
       
@@ -580,11 +521,7 @@
       const [quizStep, setQuizStep] = useState(0); 
       const [currentQuestion, setCurrentQuestion] = useState(0);
       const [score, setScore] = useState(0);
-      
-      // Sinkronisasi data sejak pertama aplikasi dirender
-      const [myScores, setMyScores] = useState(() => syncLocalAndState(localStorage.getItem('alfal_session_name')));
-      
-      const [quizQuestions, setQuizQuestions] = useState([]);
+      const [myScores, setMyScores] = useState([]);
 
       // Scramble Game States
       const [scrambledLetters, setScrambledLetters] = useState([]);
@@ -593,7 +530,7 @@
       const [isProcessing, setIsProcessing] = useState(false);
 
       // Voice Quiz States (Pemanasan Setor Hafalan)
-      const [rekamStep, setRekamStep] = useState(0); 
+      const [rekamStep, setRekamStep] = useState(0);
       const [voiceQuizList, setVoiceQuizList] = useState([]);
       const [currentVoiceQuestion, setCurrentVoiceQuestion] = useState(0);
       const [isListeningQuiz, setIsListeningQuiz] = useState(false);
@@ -612,48 +549,234 @@
 
       const currentMufrodatList = MUFRODAT_DB[selectedDay].data;
 
-      // FUNGSI UNTUK MENGECEK APAKAH HARI TERBUKA ATAU TERKUNCI
-      const checkDayUnlocked = (day) => {
-        if (day === 1) return true; // Hari 1 selalu terbuka
-        // Cek apakah hari sebelumnya sudah mendapat nilai >= 80
-        return myScores.some(s => s.day == (day - 1) && s.score >= 80);
-      };
+      useEffect(() => {
+        const fetchVoices = () => setAvailableVoices(window.speechSynthesis.getVoices());
+        if ('speechSynthesis' in window) {
+          fetchVoices();
+          window.speechSynthesis.onvoiceschanged = fetchVoices;
+        }
+      }, []);
 
-      // FUNGSI UNTUK TEXT-TO-SPEECH
-      const playAudio = (text) => {
-        if (!('speechSynthesis' in window)) {
-          alert("Maaf, peramban kamu tidak mendukung fitur suara.");
+      // Menyiapkan 5 soal pemanasan setiap kali buka tab Rekam
+      useEffect(() => {
+        if (activeTab === 'rekam') {
+          setRekamStep(0);
+          setCurrentVoiceQuestion(0);
+          setRecognizedText("");
+          setVoiceQuizFeedback(null);
+          deleteRecording();
+          
+          const allData = MUFRODAT_DB[selectedDay].data;
+          const shuffled = [...allData].sort(() => 0.5 - Math.random());
+          setVoiceQuizList(shuffled.slice(0, 5));
+        }
+      }, [activeTab, selectedDay]);
+
+      // FUNGSI STT (Speech-to-Text) untuk Kuis Suara
+      const startListeningVoiceQuiz = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert("Maaf, browser Anda tidak mendukung fitur pengenalan suara otomatis. Anda akan langsung dialihkan ke bagian Setor Hafalan Utama.");
+          setRekamStep(1);
           return;
         }
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        if (isIOS && !hasShownIosHint) {
-           setShowIosHint(true);
-           setHasShownIosHint(true);
-           setTimeout(() => setShowIosHint(false), 6000);
-        }
+        setIsListeningQuiz(true);
+        setRecognizedText("");
+        setVoiceQuizFeedback(null);
 
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ar-SA';
-        utterance.rate = 0.85; 
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-SA';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
 
-        if (availableVoices.length > 0) {
-          const arabicVoice = availableVoices.find(voice => voice.lang.includes('ar'));
-          if (arabicVoice) utterance.voice = arabicVoice;
-        }
-        
-        window.speechSynthesis.speak(utterance);
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setRecognizedText(transcript);
+
+          const targetWord = voiceQuizList[currentVoiceQuestion].arab;
+
+          // Normalisasi: Menghapus harakat, spasi, dan menyamakan Alif/Ta-marbutah agar anak mudah benar
+          const normalize = (text) => {
+            if (!text) return "";
+            return text.replace(/[\u064B-\u065F]/g, '')
+                       .replace(/[أإآ]/g, 'ا')
+                       .replace(/ة/g, 'ه')
+                       .replace(/ى/g, 'ي')
+                       .replace(/\s+/g, '');
+          };
+
+          const normTarget = normalize(targetWord);
+          const normInput = normalize(transcript);
+
+          if (normInput.includes(normTarget) || normTarget.includes(normInput)) {
+            setVoiceQuizFeedback('correct');
+            setTimeout(() => {
+              if (currentVoiceQuestion < 4) {
+                setCurrentVoiceQuestion(q => q + 1);
+                setRecognizedText("");
+                setVoiceQuizFeedback(null);
+              } else {
+                setRekamStep(1); // Pemanasan selesai, masuk ke setor hafalan asli
+              }
+            }, 1500);
+          } else {
+            setVoiceQuizFeedback('wrong');
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech Recognition Error:", event.error);
+          if(event.error === 'not-allowed') {
+             alert("Akses mikrofon ditolak! Izinkan mikrofon di pengaturan browser untuk bermain latihan suara.");
+          }
+          setVoiceQuizFeedback('error');
+          setIsListeningQuiz(false);
+        };
+
+        recognition.onend = () => {
+          setIsListeningQuiz(false);
+        };
+
+        recognition.start();
       };
 
-      const unlockAudioContext = () => {
+      const startRecording = async () => {
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Maaf, browser Anda tidak mendukung fitur rekam suara. Pastikan membuka web ini melalui Google Chrome/Safari versi terbaru (HTTPS).");
+            return;
+          }
+
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          
+          let options = {};
+          if (typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function') {
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+              options = { mimeType: 'audio/webm' };
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+              options = { mimeType: 'audio/mp4' };
+            } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+              options = { mimeType: 'audio/aac' };
+            }
+          }
+
+          let mediaRecorder;
+          try {
+            mediaRecorder = new MediaRecorder(stream, options);
+          } catch (e) {
+            mediaRecorder = new MediaRecorder(stream);
+          }
+
+          mediaRecorderRef.current = mediaRecorder;
+          audioChunksRef.current = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            const actualMimeType = mediaRecorder.mimeType || 'audio/mp4';
+            const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+            const url = URL.createObjectURL(audioBlob);
+            setAudioUrl(url);
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+              const base64data = reader.result.split(',')[1]; 
+              setAudioBase64(base64data);
+            };
+
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          setIsRecording(true);
+        } catch (err) {
+          console.error("Gagal mengakses mikrofon:", err);
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+              alert("Akses mikrofon ditolak!\n\nMohon izinkan akses mikrofon di pengaturan browser Anda (ketuk ikon gembok 🔒 di samping link web untuk mengubah izin).");
+          } else {
+              alert("Gagal merekam.\n\nPastikan link dibuka di Safari (untuk iPhone) atau Chrome (untuk Android), BUKAN dari browser bawaan WhatsApp.");
+          }
+        }
+      };
+
+      const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+          mediaRecorderRef.current.stop();
+          setIsRecording(false);
+        }
+      };
+
+      const deleteRecording = () => {
+        setAudioUrl(null);
+        setAudioBase64("");
+        setIsAudioSent(false);
+        audioChunksRef.current = [];
+      };
+
+      const playAudio = (text) => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if ((isIOS || isSafari) && !hasShownIosHint) {
+            setShowIosHint(true);
+            setHasShownIosHint(true);
+            setTimeout(() => setShowIosHint(false), 7000);
+        }
+
+        if (isIOS || isSafari) {
+           fallbackAudio(text + " .");
+           return;
+        }
+
+        try {
+          const clearText = text + " .";
+          const url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=${encodeURIComponent(clearText)}`;
+          const audio = new Audio(url);
+          audio.playbackRate = 0.85; 
+          audio.load(); 
+          
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              fallbackAudio(clearText);
+            });
+          }
+        } catch (e) {
+          fallbackAudio(text + " .");
+        }
+      };
+
+      const fallbackAudio = (text) => {
         if ('speechSynthesis' in window) {
-           const utterance = new SpeechSynthesisUtterance('');
-           utterance.volume = 0;
-           window.speechSynthesis.speak(utterance);
+          window.speechSynthesis.cancel();
+          
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'ar-SA'; 
+          utterance.rate = 0.85; 
+
+          const arabicVoices = availableVoices.filter(v => v.lang.startsWith('ar'));
+          
+          let targetVoice = arabicVoices.find(v => 
+            v.name.toLowerCase().includes('female') || 
+            v.name.toLowerCase().includes('laila') || 
+            v.name.toLowerCase().includes('maged') || 
+            v.name.toLowerCase().includes('tarik') || 
+            v.name.toLowerCase().includes('zeina')
+          );
+
+          if (targetVoice) {
+            utterance.voice = targetVoice;
+          } else if (arabicVoices.length > 0) {
+            utterance.voice = arabicVoices[0];
+          }
+
+          window.speechSynthesis.speak(utterance);
         }
       };
 
@@ -672,172 +795,48 @@
         return () => unsubscribe();
       }, []);
 
-      // EFEK SINKRONISASI FIRESTORE DAN LOCAL STORAGE (MAKSIMAL)
       useEffect(() => {
         if (!isLoggedIn || !participantName) return;
 
-        const cleanName = participantName.trim().toLowerCase();
-        const localHistoryKey = getHistoryKey(participantName);
+        const localHistoryKey = `alfal_history_${participantName}`;
+        const localHistory = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
 
-        // Pastikan kita muat kembali dari memori HP sebagai lapis pengaman pertama
-        setMyScores(syncLocalAndState(participantName));
-
-        if (db && user) {
+        if (db) {
           const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
           const q = query(scoresCol);
           
           const unsubscribe = onSnapshot(q, (snapshot) => {
             const allScores = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Saring dan paskan format agar persis sama dengan memori HP
             const filtered = allScores
-              .filter(s => s.name && s.name.trim().toLowerCase() === cleanName)
-              .map(s => ({
-                ...s,
-                timestamp: typeof s.timestamp === 'number' ? s.timestamp : (s.timestamp?.seconds ? s.timestamp.seconds * 1000 : Date.now())
-              }));
-            
-            const latestLocal = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
-            const combinedMap = new Map();
-            
-            // Gabungkan menggunakan Hari-Skor sebagai pengunci unik agar data tidak kembar
-            latestLocal.forEach(item => combinedMap.set(`${item.day}-${item.score}`, item));
-            filtered.forEach(item => combinedMap.set(`${item.day}-${item.score}`, item));
-
-            const combined = Array.from(combinedMap.values());
-            combined.sort((a, b) => b.timestamp - a.timestamp);
-            
-            setMyScores(combined);
-            localStorage.setItem(localHistoryKey, JSON.stringify(combined));
+              .filter(s => s.name === participantName)
+              .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+            setMyScores(filtered);
           }, (err) => {
              console.error("Firestore Error:", err);
+             setMyScores(localHistory); 
           });
           
           return () => unsubscribe();
+        } else {
+          localHistory.sort((a, b) => b.timestamp - a.timestamp);
+          setMyScores(localHistory);
         }
       }, [user, isLoggedIn, participantName, db]);
 
-      // MUAT PERTANYAAN KUIS
       useEffect(() => {
-        if (quizStep === 1 && currentQuestion % 2 !== 0 && quizQuestions.length > 0) {
-          const target = quizQuestions[currentQuestion].arab;
+        if (quizStep === 1 && currentQuestion % 2 !== 0) {
+          const target = currentMufrodatList[currentQuestion].arab;
           const lettersArray = target.match(/\p{L}\p{M}*/gu) || target.split('');
           const letters = lettersArray.map((l, i) => ({ id: i, char: l }));
           const shuffled = [...letters].sort(() => Math.random() - 0.5);
           setScrambledLetters(shuffled);
           setCurrentGuess([]);
         }
-      }, [currentQuestion, quizStep, selectedDay, quizQuestions]);
+      }, [currentQuestion, quizStep, selectedDay]);
 
-      // LOGIKA REKAM HAFALAN
-      const startRecording = async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorderRef.current = mediaRecorder;
-          audioChunksRef.current = [];
-
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) audioChunksRef.current.push(event.data);
-          };
-
-          mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            const url = URL.createObjectURL(audioBlob);
-            setAudioUrl(url);
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = () => setAudioBase64(reader.result);
-            
-            stream.getTracks().forEach(track => track.stop());
-          };
-
-          mediaRecorder.start();
-          setIsRecording(true);
-        } catch (error) {
-          alert("Gagal mengakses mikrofon. Pastikan kamu sudah memberikan izin akses mikrofon di perambanmu.");
-          console.error(error);
-        }
-      };
-
-      const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-          mediaRecorderRef.current.stop();
-          setIsRecording(false);
-        }
-      };
-
-      const deleteRecording = () => {
-        setAudioUrl(null);
-        setAudioBase64("");
-        setIsAudioSent(false);
-      };
-
-      // FUNGSI PENGENAL SUARA UNTUK LATIHAN
-      const startListeningVoiceQuiz = () => {
-         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-         if (!SpeechRecognition) {
-            alert("Maaf, peramban kamu tidak mendukung fitur koreksi suara (Gunakan Google Chrome). Namun kamu tetap bisa menggunakan Setor Hafalan di langkah berikutnya.");
-            setRekamStep(1);
-            return;
-         }
-
-         setIsListeningQuiz(true);
-         setRecognizedText("");
-         setVoiceQuizFeedback(null);
-
-         const recognition = new SpeechRecognition();
-         recognition.lang = 'ar-SA';
-         recognition.interimResults = false;
-         recognition.maxAlternatives = 1;
-
-         recognition.start();
-
-         recognition.onresult = (event) => {
-            const speechResult = event.results[0][0].transcript;
-            setRecognizedText(speechResult);
-            
-            // Pengecekan dengan normalisasi agar huruf yang dibaca oleh Google Speech (tanpa harakat, ta marbuthoh jadi ha, dll) bisa tetap valid
-            const targetWord = normalizeArabic(voiceQuizList[currentVoiceQuestion].arab);
-            const spokenWord = normalizeArabic(speechResult);
-
-            if (spokenWord.includes(targetWord) || targetWord.includes(spokenWord)) {
-               setVoiceQuizFeedback('correct');
-               setTimeout(() => {
-                 if (currentVoiceQuestion < 4) {
-                    setCurrentVoiceQuestion(q => q + 1);
-                    setRecognizedText("");
-                    setVoiceQuizFeedback(null);
-                 } else {
-                    setRekamStep(1); 
-                 }
-               }, 2500); // Waktu diperpanjang sedikit agar siswa bisa melihat & merekam di otak tulisan Arab yang sempurna
-            } else {
-               setVoiceQuizFeedback('wrong');
-            }
-         };
-
-         recognition.onspeechend = () => {
-            recognition.stop();
-            setIsListeningQuiz(false);
-         };
-
-         recognition.onerror = (event) => {
-            console.error("Speech recognition error", event.error);
-            setVoiceQuizFeedback('error');
-            setIsListeningQuiz(false);
-         };
-      };
-
-      // --- LOGIKA LOGIN / LOGOUT ANTI-HILANG ---
       const handleLogin = (e) => {
         e.preventDefault();
-        unlockAudioContext();
-
-        const cleanName = participantName.trim();
-        
-        if (!cleanName) {
+        if (!participantName.trim()) {
           setLoginError("Nama lengkap tidak boleh kosong.");
           return;
         }
@@ -845,32 +844,33 @@
           setLoginError("Token akses salah. Silakan hubungi Admin.");
           return;
         }
-        
-        setParticipantName(cleanName);
-        localStorage.setItem('alfal_session_name', cleanName);
-        
-        // Panggil fungsi sinkronisasi utama
-        setMyScores(syncLocalAndState(cleanName));
 
+        try {
+          if ('speechSynthesis' in window) {
+              const warmup = new SpeechSynthesisUtterance('');
+              warmup.volume = 0;
+              window.speechSynthesis.speak(warmup);
+          }
+        } catch (err) {}
+        
+        localStorage.setItem('alfal_session_name', participantName);
         setIsLoggedIn(true);
         setLoginError("");
       };
 
       const handleLogout = () => {
         if (window.confirm("Apakah kamu yakin ingin keluar?")) {
-          // Hanya menghapus identitas Sesi, bukan membuang riwayatnya
           localStorage.removeItem('alfal_session_name');
           setIsLoggedIn(false);
           setParticipantName("");
           setInputToken("");
           setActiveTab('home');
-          setMyScores([]);
         }
       };
 
       const handleResetHistory = () => {
-        if (window.confirm("Yakin ingin menghapus semua riwayat belajar? Data yang dihapus tidak dapat dikembalikan.")) {
-          const localHistoryKey = getHistoryKey(participantName);
+        if (window.confirm("Apakah kamu yakin ingin menghapus semua riwayat belajar? Data yang sudah dihapus tidak dapat dikembalikan.")) {
+          const localHistoryKey = `alfal_history_${participantName}`;
           localStorage.removeItem(localHistoryKey);
           setMyScores([]);
         }
@@ -911,9 +911,8 @@
         if (isProcessing) return;
         setIsProcessing(true);
         try {
-          const cleanName = participantName.trim();
           const category = `Hafalan Hari ${selectedDay}: ${MUFRODAT_DB[selectedDay].title}`;
-          await sendToGoogleSheet(cleanName, "-", category, audioBase64, selectedDay, "Hafalan");
+          await sendToGoogleSheet(participantName, "-", category, audioBase64, selectedDay, "Hafalan");
           setIsAudioSent(true);
         } catch (error) {
           alert("Gagal mengirim rekaman ke server. Pastikan koneksi internet lancar lalu coba lagi.");
@@ -925,37 +924,36 @@
       const submitQuiz = async () => {
         if (isProcessing) return;
         setIsProcessing(true);
-        
-        const cleanName = participantName.trim();
         const finalScore = Math.round((score / 10) * 100); 
         const category = `Kuis Hari ${selectedDay}: ${MUFRODAT_DB[selectedDay].title}`;
         
         try {
-          const localHistoryKey = getHistoryKey(cleanName);
-          let existingHistory = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
-          
+          const localHistoryKey = `alfal_history_${participantName}`;
+          const existingHistory = JSON.parse(localStorage.getItem(localHistoryKey)) || [];
           const newRecord = {
-            name: cleanName,
+            name: participantName,
             score: finalScore,
             category: category,
             day: selectedDay,
             timestamp: Date.now() 
           };
+          localStorage.setItem(localHistoryKey, JSON.stringify([...existingHistory, newRecord]));
           
-          // Mencegah nilai terdobel untuk hari dan skor yang sama
-          existingHistory = existingHistory.filter(item => !(item.day === selectedDay && item.score === finalScore));
-          
-          const updatedHistory = [...existingHistory, newRecord].sort((a,b) => b.timestamp - a.timestamp);
-          localStorage.setItem(localHistoryKey, JSON.stringify(updatedHistory));
-          setMyScores(updatedHistory);
+          setMyScores(prev => [newRecord, ...prev].sort((a,b) => b.timestamp - a.timestamp));
 
-          if(db && user) {
+          if(db) {
             const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
-            await addDoc(scoresCol, newRecord); 
+            await addDoc(scoresCol, {
+              name: participantName,
+              score: finalScore,
+              category: category,
+              day: selectedDay,
+              timestamp: serverTimestamp()
+            });
           }
           
           try {
-            await sendToGoogleSheet(cleanName, finalScore, category, "", selectedDay, "Kuis");
+            await sendToGoogleSheet(participantName, finalScore, category, "", selectedDay, "Kuis");
           } catch(e) {
             console.warn("Gagal simpan ke Sheet.");
           }
@@ -1008,7 +1006,7 @@
         setIsProcessing(true);
         
         const guessString = currentGuess.map(l => l.char).join('').replace(/\s+/g, '');
-        const targetString = quizQuestions[currentQuestion].arab.replace(/\s+/g, '');
+        const targetString = currentMufrodatList[currentQuestion].arab.replace(/\s+/g, '');
         
         let newScore = score;
         if (guessString === targetString) {
@@ -1022,41 +1020,13 @@
         }, 150);
       };
 
-      // Efek Pengenalan Suara Sedia
-      useEffect(() => {
-        if (activeTab === 'rekam' && quizStep === 0) {
-           const shuffled = [...currentMufrodatList].sort(() => Math.random() - 0.5).slice(0, 5);
-           setVoiceQuizList(shuffled);
-           setCurrentVoiceQuestion(0);
-           setRecognizedText("");
-           setVoiceQuizFeedback(null);
-           
-           if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-              setRekamStep(1);
-           } else {
-              setRekamStep(0);
-           }
-        }
-      }, [activeTab, selectedDay]);
-
-      // Minta suara perangkat
-      useEffect(() => {
-        const loadVoices = () => {
-          setAvailableVoices(window.speechSynthesis.getVoices());
-        };
-        loadVoices();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-          window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
-      }, []);
-
       const SidebarItem = ({ id, icon: Icon, label }) => (
         <button
           onClick={() => { 
             setActiveTab(id); 
             if (id !== 'home' && quizStep !== 0) setQuizStep(0); 
           }}
-          className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all active:scale-95 touch-manipulation ${
+          className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all ${
             activeTab === id 
               ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' 
               : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
@@ -1081,7 +1051,7 @@
                 </div>
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tight">ALFAL.ID</h1>
                 <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed px-2 md:px-4">
-                  Silakan masuk menggunakan Nama & Token Alfal.
+                  Silakan masuk menggunakan Nama & Token Alfal 2026.
                 </p>
               </div>
               
@@ -1095,7 +1065,7 @@
                     <input 
                       type="text" 
                       placeholder="Nama Lengkap Peserta" 
-                      className="w-full pl-11 pr-4 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-emerald-500 focus:bg-white transition-all font-bold text-sm md:text-base text-slate-800" 
+                      className="w-full pl-11 pr-4 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-emerald-500 focus:bg-white transition-all font-bold text-sm md:text-base" 
                       value={participantName} 
                       onChange={(e) => setParticipantName(e.target.value)} 
                       required 
@@ -1112,7 +1082,7 @@
                     <input 
                       type="password" 
                       placeholder="Token Keamanan (123)" 
-                      className="w-full pl-11 pr-4 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-emerald-500 focus:bg-white transition-all font-bold text-sm md:text-base text-slate-800" 
+                      className="w-full pl-11 pr-4 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-emerald-500 focus:bg-white transition-all font-bold text-sm md:text-base" 
                       value={inputToken} 
                       onChange={(e) => setInputToken(e.target.value)} 
                       required 
@@ -1129,7 +1099,7 @@
                 
                 <button 
                   type="submit" 
-                  className="w-full bg-emerald-600 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation"
+                  className="w-full bg-emerald-600 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-emerald-700 transition-all active:scale-95"
                 >
                   Masuk Sekarang
                 </button>
@@ -1140,11 +1110,11 @@
       }
 
       return (
-        <div className="min-h-screen bg-[#F8FAFC] flex text-slate-800 font-sans relative pt-safe">
+        <div className="min-h-screen bg-[#F8FAFC] flex text-slate-800 font-sans relative">
           
           {/* Notifikasi Peringatan Khusus Pengguna iPhone/Safari */}
           {showIosHint && (
-            <div className="fixed top-safe left-1/2 transform -translate-x-1/2 mt-4 bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-xs md:text-sm text-center w-[90%] max-w-sm border-2 border-blue-400 transition-all">
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-xs md:text-sm text-center w-[90%] max-w-sm border-2 border-blue-400 transition-all">
               📱 Pengguna Safari/iPhone:<br/>Pastikan <b>Tombol Mute/Hening</b> di samping HP Anda <b>dimatikan</b> agar suara mufrodat terdengar!
             </div>
           )}
@@ -1171,14 +1141,14 @@
             <div className="p-6 border-t border-slate-50 space-y-4">
               <button 
                 onClick={handleLogout} 
-                className="w-full py-3 bg-red-50 rounded-xl text-red-500 flex justify-center items-center space-x-2 font-bold transition-colors hover:bg-red-100 active:scale-95 touch-manipulation"
+                className="w-full py-3 bg-red-50 rounded-xl text-red-500 flex justify-center items-center space-x-2 font-bold transition-colors hover:bg-red-100"
               >
                 <LogOut size={18} />
                 <span className={!isSidebarOpen ? 'hidden' : ''}>Keluar</span>
               </button>
               <button 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-                className="w-full py-2 bg-slate-50 rounded-xl text-slate-400 flex justify-center hover:text-emerald-600 transition-colors active:scale-95 touch-manipulation"
+                className="w-full py-2 bg-slate-50 rounded-xl text-slate-400 flex justify-center hover:text-emerald-600 transition-colors"
               >
                 <ChevronRight className={`transition-transform ${isSidebarOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -1200,7 +1170,7 @@
                 <button
                   key={item.id}
                   onClick={() => { setActiveTab(item.id); if (item.id !== 'home' && quizStep !== 0) setQuizStep(0); }}
-                  className={`flex flex-col items-center p-2 rounded-xl transition-all active:scale-90 touch-manipulation ${isActive ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-500'}`}
                 >
                   <div className={`p-1.5 rounded-lg mb-1 ${isActive ? 'bg-emerald-50' : ''}`}>
                     <IconComponent size={20} />
@@ -1212,12 +1182,12 @@
           </nav>
 
           {/* Main Content */}
-          <main className="flex-1 h-screen overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 relative">
+          <main className="flex-1 h-screen overflow-y-auto p-4 md:p-10 pb-24 md:pb-10 relative">
             
             <header className="flex justify-between items-center mb-8 md:mb-10 no-print">
               <div className="flex items-center space-x-3 md:space-x-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-xl md:rounded-2xl flex items-center justify-center text-emerald-700 font-black text-lg md:text-xl border border-emerald-200 shadow-sm shrink-0">
-                  {participantName[0] || 'A'}
+                  {participantName[0]}
                 </div>
                 <div>
                   <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">Ahlan, {participantName.split(' ')[0]}!</h1>
@@ -1231,7 +1201,7 @@
                  </span>
               </div>
               {/* Tombol Logout Khusus HP */}
-              <button onClick={handleLogout} className="md:hidden p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors active:scale-95 touch-manipulation">
+              <button onClick={handleLogout} className="md:hidden p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
                 <LogOut size={18} />
               </button>
             </header>
@@ -1239,54 +1209,40 @@
             {/* Tab Beranda */}
             {activeTab === 'home' && (
               <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
-                  {Object.keys(MUFRODAT_DB).map((day) => {
-                    const dayNum = parseInt(day);
-                    const isUnlocked = checkDayUnlocked(dayNum);
-                    const isPassed = myScores.some(s => s.day == dayNum && s.score >= 80);
-
-                    return (
-                      <div 
-                        key={day} 
-                        className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 cursor-pointer 
-                          ${selectedDay == day ? 'bg-emerald-600 text-white shadow-emerald-100' 
-                             : !isUnlocked ? 'bg-slate-50 text-slate-500 border border-slate-200 opacity-80' 
-                             : 'bg-white text-slate-800 border border-slate-100'}`}
-                        onClick={() => { setSelectedDay(dayNum); setActiveTab('materi'); window.scrollTo(0,0); }}
-                      >
-                        <div className="relative z-10">
-                          <div className="flex justify-between items-start mb-4">
-                            <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay == day ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-200 text-slate-600'}`}>
-                              HARI {day}
-                            </span>
-                            {isPassed ? (
-                              <CheckCircle className={selectedDay == day ? "text-emerald-200" : "text-emerald-500"} size={20} />
-                            ) : !isUnlocked ? (
-                              <Lock className={selectedDay == day ? "text-emerald-200" : "text-slate-400"} size={18} />
-                            ) : null}
-                          </div>
-                          <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay == day ? '#a7f3d0' : isUnlocked ? '#047857' : '#94a3b8' }}>
-                            {MUFRODAT_DB[day].titleAr}
-                          </h3>
-                          <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay == day ? 'text-emerald-100' : isUnlocked ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {MUFRODAT_DB[day].title}
-                          </h2>
-                          <button 
-                            className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 touch-manipulation 
-                              ${selectedDay == day ? 'bg-white text-emerald-700 hover:bg-emerald-50' 
-                                 : !isUnlocked ? 'bg-slate-200 text-slate-500 hover:bg-slate-300 shadow-none'
-                                 : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                          >
-                            {isPassed ? `Misi Selesai` : !isUnlocked ? `Lihat Materi` : `Pilih Misi ${day}`}
-                          </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-6">
+                  {Object.keys(MUFRODAT_DB).map((day) => (
+                    <div 
+                      key={day} 
+                      className={`group relative rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 overflow-hidden shadow-xl md:shadow-2xl transition-all hover:-translate-y-2 ${selectedDay === Number(day) ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-white text-slate-800 border border-slate-100'}`}
+                    >
+                      <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                          <span className={`px-3 py-1 md:px-4 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedDay === Number(day) ? 'bg-emerald-500/30 text-emerald-50' : 'bg-slate-100 text-slate-500'}`}>
+                            HARI {day}
+                          </span>
+                          {myScores.some(s => s.day === Number(day) && s.score >= 80) && (
+                            <CheckCircle className={selectedDay === Number(day) ? "text-emerald-200" : "text-emerald-500"} size={20} />
+                          )}
                         </div>
-                        <BookOpen 
-                          className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 ${selectedDay == day ? 'text-white' : 'text-slate-900'}`} 
-                          size={100} 
-                        />
+                        <h3 className="text-2xl md:text-3xl font-arabic font-bold mb-1 tracking-tight" dir="rtl" style={{ color: selectedDay === Number(day) ? '#a7f3d0' : '#047857' }}>
+                          {MUFRODAT_DB[day].titleAr}
+                        </h3>
+                        <h2 className={`text-sm md:text-base font-bold mb-4 tracking-tight leading-tight ${selectedDay === Number(day) ? 'text-emerald-100' : 'text-slate-500'}`}>
+                          {MUFRODAT_DB[day].title}
+                        </h2>
+                        <button 
+                          onClick={() => { setSelectedDay(parseInt(day)); setActiveTab('materi'); window.scrollTo(0,0); }}
+                          className={`w-full py-2.5 md:py-3 rounded-xl font-black text-[10px] shadow-lg md:shadow-xl transition-all active:scale-95 ${selectedDay === Number(day) ? 'bg-white text-emerald-700 hover:bg-emerald-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                        >
+                          Pilih Misi {day}
+                        </button>
                       </div>
-                    );
-                  })}
+                      <BookOpen 
+                        className={`absolute right-0 bottom-0 opacity-5 -mr-8 -mb-8 md:-mr-10 md:-mb-10 pointer-events-none transition-transform group-hover:scale-110 ${selectedDay === Number(day) ? 'text-white' : 'text-slate-900'}`} 
+                        size={100} 
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-slate-100 shadow-sm">
@@ -1344,7 +1300,7 @@
                   <div className="flex justify-end sm:self-center mt-2 sm:mt-0">
                     <button 
                       onClick={() => {setActiveTab('rekam'); window.scrollTo(0,0);}} 
-                      className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-3.5 md:py-3 rounded-xl font-black text-sm shadow-lg hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation text-center flex justify-center items-center gap-2"
+                      className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-3.5 md:py-3 rounded-xl font-black text-sm shadow-lg hover:bg-emerald-700 transition-all active:scale-95 text-center flex justify-center items-center gap-2"
                     >
                       <Mic size={18}/> Setor Hafalan
                     </button>
@@ -1361,7 +1317,7 @@
                         </div>
                         <button 
                           onClick={() => playAudio(item.arab)}
-                          className="p-2.5 md:p-3 bg-emerald-50 text-emerald-600 rounded-full hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 active:scale-95 touch-manipulation transition-all shadow-sm"
+                          className="p-2.5 md:p-3 bg-emerald-50 text-emerald-600 rounded-full hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 active:scale-95 transition-all shadow-sm"
                           title="Dengarkan Cara Baca"
                         >
                           <Volume2 size={20} className="md:w-6 md:h-6" />
@@ -1388,7 +1344,7 @@
             {activeTab === 'rekam' && (
               <div className="max-w-2xl mx-auto pb-10">
                 
-                {/* Step 0: Pemanasan Suara */}
+                {/* Step 0: Pemanasan Suara (Speech Recognition Quiz) */}
                 {rekamStep === 0 && voiceQuizList.length > 0 && (
                   <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center relative overflow-hidden animate-in fade-in duration-500">
                     
@@ -1414,7 +1370,7 @@
                       <button
                         onClick={startListeningVoiceQuiz}
                         disabled={isListeningQuiz}
-                        className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white transition-all shadow-xl touch-manipulation active:scale-95
+                        className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white transition-all shadow-xl
                           ${isListeningQuiz 
                             ? 'bg-red-500 animate-pulse ring-8 ring-red-500/30 scale-105' 
                             : 'bg-gradient-to-br from-blue-500 to-blue-700 hover:scale-105 shadow-blue-200'}`}
@@ -1427,16 +1383,11 @@
                         {!isListeningQuiz && !recognizedText && <p className="text-sm font-bold text-slate-400">Ketuk untuk bicara</p>}
                         
                         {recognizedText && (
-                           <div className="animate-in fade-in zoom-in duration-300 w-full flex flex-col items-center">
-                             {voiceQuizFeedback === 'correct' ? (
-                               <p className="text-3xl md:text-4xl font-arabic font-bold text-emerald-600 mb-2 animate-in zoom-in duration-300" dir="rtl">{voiceQuizList[currentVoiceQuestion].arab}</p>
-                             ) : (
-                               <p className="text-2xl md:text-3xl font-arabic font-bold text-slate-800 mb-2" dir="rtl">{recognizedText}</p>
-                             )}
-                             
-                             {voiceQuizFeedback === 'correct' && <p className="text-emerald-500 font-bold text-sm md:text-base mt-1">⭐ Mumtaz! Pengucapan tepat.</p>}
-                             {voiceQuizFeedback === 'wrong' && <p className="text-red-500 font-bold text-sm md:text-base mt-1">Kurang tepat, ayo coba lagi!</p>}
-                             {voiceQuizFeedback === 'error' && <p className="text-orange-500 font-bold text-sm md:text-base mt-1">Suara tidak terdengar jelas.</p>}
+                           <div className="animate-in fade-in zoom-in duration-300">
+                             <p className="text-2xl md:text-3xl font-arabic font-bold text-slate-800" dir="rtl">{recognizedText}</p>
+                             {voiceQuizFeedback === 'correct' && <p className="text-emerald-500 font-bold text-sm md:text-base mt-2">⭐ Mumtaz! Pengucapan tepat.</p>}
+                             {voiceQuizFeedback === 'wrong' && <p className="text-red-500 font-bold text-sm md:text-base mt-2">Kurang tepat, ayo coba lagi!</p>}
+                             {voiceQuizFeedback === 'error' && <p className="text-orange-500 font-bold text-sm md:text-base mt-2">Suara tidak terdengar jelas.</p>}
                            </div>
                         )}
                       </div>
@@ -1444,7 +1395,7 @@
 
                     <button 
                       onClick={() => setRekamStep(1)} 
-                      className="text-slate-400 text-xs md:text-sm font-bold underline hover:text-slate-600 transition-colors active:text-slate-800 touch-manipulation p-2"
+                      className="text-slate-400 text-xs md:text-sm font-bold underline hover:text-slate-600 transition-colors"
                     >
                       Lewati Pemanasan & Langsung Setor Hafalan
                     </button>
@@ -1454,78 +1405,55 @@
                 {/* Step 1: Setor Hafalan Utama */}
                 {rekamStep === 1 && (
                   <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
-                    
-                    {/* Cek Apakah Hari Ini Sudah Terbuka (Unlocked) */}
-                    {!checkDayUnlocked(selectedDay) ? (
-                       <div className="flex flex-col items-center justify-center py-6 md:py-10">
-                         <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-6 md:mb-8 ring-8 ring-slate-50">
-                           <Lock size={40} className="md:w-[48px] md:h-[48px]" />
-                         </div>
-                         <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-4 tracking-tight">Setor Hafalan Terkunci</h2>
-                         <p className="text-slate-500 mb-8 text-sm md:text-base text-center max-w-md px-4">
-                           Kamu harus menyelesaikan <b>Kuis Hari {selectedDay - 1}</b> dengan nilai minimal 80 untuk membuka misi setor hafalan ini.
-                         </p>
-                         <button 
-                           onClick={() => {setSelectedDay(selectedDay - 1); setActiveTab('quiz'); setQuizStep(0); window.scrollTo(0,0);}} 
-                           className="w-full max-w-sm bg-slate-800 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-slate-900 transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-2 mx-auto"
-                         >
-                           <Award size={20}/> Kerjakan Kuis Hari {selectedDay - 1}
-                         </button>
-                       </div>
-                    ) : (
-                      // Jika Terbuka, Tampilkan UI Rekam Hafalan Normal
-                      <>
-                        <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-emerald-50">
-                          <Mic size={40} className="md:w-[48px] md:h-[48px]" />
-                        </div>
-                        <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Setor Hafalan Hari {selectedDay}</h2>
-                        <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
-                          <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
-                          <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
-                          <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
-                          <p className="text-slate-500 mt-6 text-sm md:text-base px-2 md:px-6">Tekan tombol rekam di bawah ini dan bacakan 10 hafalan mufrodat bahasa Arab beserta artinya dengan lantang!</p>
-                        </div>
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-emerald-50">
+                      <Mic size={40} className="md:w-[48px] md:h-[48px]" />
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Setor Hafalan Hari {selectedDay}</h2>
+                    <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
+                      <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
+                      <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
+                      <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
+                      <p className="text-slate-500 mt-6 text-sm md:text-base px-2 md:px-6">Tekan tombol rekam di bawah ini dan bacakan 10 hafalan mufrodat bahasa Arab beserta artinya dengan lantang!</p>
+                    </div>
 
-                        {!audioUrl ? (
-                          <div className="flex flex-col items-center justify-center gap-6">
-                            <button
-                              onClick={isRecording ? stopRecording : startRecording}
-                              className={`w-24 h-24 md:w-28 md:h-28 rounded-[2rem] flex items-center justify-center text-white shadow-xl transition-all touch-manipulation active:scale-95 ${isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-emerald-200'}`}
-                            >
-                              {isRecording ? <Square size={32} className="md:w-10 md:h-10" /> : <Mic size={40} className="md:w-12 md:h-12" />}
-                            </button>
-                            <p className="text-sm md:text-base font-bold text-slate-400">
-                              {isRecording ? "Sedang merekam... Tekan kotak untuk berhenti." : "Tekan ikon Mikrofon untuk mulai merekam"}
-                            </p>
+                    {!audioUrl ? (
+                      <div className="flex flex-col items-center justify-center gap-6">
+                        <button
+                          onClick={isRecording ? stopRecording : startRecording}
+                          className={`w-24 h-24 md:w-28 md:h-28 rounded-[2rem] flex items-center justify-center text-white shadow-xl transition-all ${isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-emerald-200'}`}
+                        >
+                          {isRecording ? <Square size={32} className="md:w-10 md:h-10" /> : <Mic size={40} className="md:w-12 md:h-12" />}
+                        </button>
+                        <p className="text-sm md:text-base font-bold text-slate-400">
+                          {isRecording ? "Sedang merekam... Tekan kotak untuk berhenti." : "Tekan ikon Mikrofon untuk mulai merekam"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-6 w-full animate-in zoom-in-95">
+                        <div className="bg-slate-50 p-4 rounded-2xl w-full max-w-md border border-slate-200 shadow-sm">
+                           <audio src={audioUrl} controls className="w-full h-12" />
+                        </div>
+                        
+                        {!isAudioSent ? (
+                          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                             <button onClick={deleteRecording} disabled={isProcessing} className="flex-1 py-3 md:py-4 bg-white border border-slate-200 text-slate-600 rounded-xl md:rounded-2xl font-black hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
+                               <Trash2 size={18} /> Ulangi
+                             </button>
+                             <button onClick={submitHafalan} disabled={isProcessing} className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
+                               {isProcessing ? "Mengirim..." : "Kirim Rekaman"} <ArrowRight size={18}/>
+                             </button>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center gap-6 w-full animate-in zoom-in-95">
-                            <div className="bg-slate-50 p-4 rounded-2xl w-full max-w-md border border-slate-200 shadow-sm">
-                               <audio src={audioUrl} controls className="w-full h-12 outline-none" />
-                            </div>
-                            
-                            {!isAudioSent ? (
-                              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                                 <button onClick={deleteRecording} disabled={isProcessing} className="flex-1 py-3 md:py-4 bg-white border border-slate-200 text-slate-600 rounded-xl md:rounded-2xl font-black hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
-                                   <Trash2 size={18} /> Ulangi
-                                 </button>
-                                 <button onClick={submitHafalan} disabled={isProcessing} className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 touch-manipulation active:scale-95">
-                                   {isProcessing ? "Mengirim..." : "Kirim Rekaman"} <ArrowRight size={18}/>
-                                 </button>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col gap-4 w-full max-w-md fade-in-up">
-                                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm">
-                                    <CheckCircle size={24} /> Rekaman Berhasil Dikirim!
-                                 </div>
-                                 <button onClick={() => { setActiveTab('quiz'); setQuizStep(0); setCurrentQuestion(0); setScore(0); window.scrollTo(0,0); }} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 mt-2 touch-manipulation active:scale-95">
-                                   Lanjut ke Kuis <ArrowRight size={18}/>
-                                 </button>
-                              </div>
-                            )}
+                          <div className="flex flex-col gap-4 w-full max-w-md fade-in-up">
+                             <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm">
+                                <CheckCircle size={24} /> Rekaman Berhasil Dikirim!
+                             </div>
+                             <button onClick={() => { setActiveTab('quiz'); setQuizStep(0); setCurrentQuestion(0); setScore(0); window.scrollTo(0,0); }} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 mt-2">
+                               Lanjut ke Kuis <ArrowRight size={18}/>
+                             </button>
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1538,51 +1466,22 @@
                 {/* Step 0: Layar Mulai */}
                 {quizStep === 0 && (
                    <div className="bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 shadow-xl md:shadow-2xl text-center animate-in fade-in duration-500">
-                     
-                     {/* Cek Apakah Hari Ini Sudah Terbuka (Unlocked) */}
-                     {!checkDayUnlocked(selectedDay) ? (
-                       <div className="flex flex-col items-center justify-center py-6 md:py-10">
-                         <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-6 md:mb-8 ring-8 ring-slate-50">
-                           <Lock size={40} className="md:w-[48px] md:h-[48px]" />
-                         </div>
-                         <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-4 tracking-tight">Kuis Terkunci</h2>
-                         <p className="text-slate-500 mb-8 text-sm md:text-base text-center max-w-md px-4">
-                           Kamu harus menyelesaikan <b>Kuis Hari {selectedDay - 1}</b> dengan nilai minimal 80 untuk membuka misi kuis ini.
-                         </p>
-                         <button 
-                           onClick={() => {setSelectedDay(selectedDay - 1); setActiveTab('quiz'); setQuizStep(0); window.scrollTo(0,0);}} 
-                           className="w-full max-w-sm bg-slate-800 text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl hover:bg-slate-900 transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-2 mx-auto"
-                         >
-                           <Award size={20}/> Kerjakan Kuis Hari {selectedDay - 1}
-                         </button>
-                       </div>
-                     ) : (
-                       // Jika Terbuka, Tampilkan UI Mulai Kuis Normal
-                       <>
-                         <div className="w-20 h-20 md:w-24 md:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-orange-50">
-                           <Trophy size={40} className="md:w-[48px] md:h-[48px]" />
-                         </div>
-                         <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Kuis Hari {selectedDay}</h2>
-                         <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
-                           <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
-                           <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
-                           <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
-                           <p className="text-slate-500 mt-4 text-sm md:text-base px-2 md:px-6">Selesaikan 10 soal tantangan campuran.</p>
-                         </div>
-                         <button 
-                           onClick={() => { 
-                             const shuffled = [...currentMufrodatList].sort(() => Math.random() - 0.5);
-                             setQuizQuestions(shuffled);
-                             setQuizStep(1); 
-                             setScore(0); 
-                             setCurrentQuestion(0); 
-                           }} 
-                           className="w-full bg-emerald-600 text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-lg md:text-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation shadow-emerald-200"
-                         >
-                           Mulai Kuis Sekarang
-                         </button>
-                       </>
-                     )}
+                     <div className="w-20 h-20 md:w-24 md:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner ring-8 ring-orange-50">
+                       <Trophy size={40} className="md:w-[48px] md:h-[48px]" />
+                     </div>
+                     <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight">Kuis Hari {selectedDay}</h2>
+                     <div className="mb-8 md:mb-12 flex flex-col items-center gap-2">
+                       <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Tema</p>
+                       <h3 className="font-arabic font-bold text-3xl md:text-4xl text-emerald-700" dir="rtl">{MUFRODAT_DB[selectedDay].titleAr}</h3>
+                       <p className="text-slate-600 font-bold text-lg md:text-xl">{MUFRODAT_DB[selectedDay].title}</p>
+                       <p className="text-slate-500 mt-4 text-sm md:text-base px-2 md:px-6">Selesaikan 10 soal tantangan campuran.</p>
+                     </div>
+                     <button 
+                       onClick={() => { setQuizStep(1); setScore(0); setCurrentQuestion(0); }} 
+                       className="w-full bg-emerald-600 text-white py-5 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-lg md:text-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 shadow-emerald-200"
+                     >
+                       Mulai Kuis Sekarang
+                     </button>
                    </div>
                 )}
 
@@ -1605,19 +1504,19 @@
                        // Pilihan Ganda
                        <div className="text-center animate-in fade-in duration-300" key={`mc-${currentQuestion}`}>
                          <p className="text-xs md:text-sm font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Apa arti kata ini?</p>
-                         <h1 className="text-5xl md:text-6xl font-arabic font-bold text-slate-800 mb-10 pb-2">{quizQuestions[currentQuestion]?.arab}</h1>
+                         <h1 className="text-5xl md:text-6xl font-arabic font-bold text-slate-800 mb-10 pb-2">{currentMufrodatList[currentQuestion].arab}</h1>
                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                            {[
-                             quizQuestions[currentQuestion]?.arti, 
-                             quizQuestions[(currentQuestion + 1) % 10]?.arti || "Buku", 
-                             quizQuestions[(currentQuestion + 2) % 10]?.arti || "Pena", 
-                             quizQuestions[(currentQuestion + 3) % 10]?.arti || "Meja"
+                             currentMufrodatList[currentQuestion].arti, 
+                             currentMufrodatList[(currentQuestion + 1) % 10]?.arti || "Buku", 
+                             currentMufrodatList[(currentQuestion + 2) % 10]?.arti || "Pena", 
+                             currentMufrodatList[(currentQuestion + 3) % 10]?.arti || "Meja"
                            ].sort().map((opt, i) => (
                              <button 
                                key={i} 
-                               onClick={() => handleChoiceAnswer(opt === quizQuestions[currentQuestion]?.arti)} 
+                               onClick={() => handleChoiceAnswer(opt === currentMufrodatList[currentQuestion].arti)} 
                                disabled={isProcessing}
-                               className="w-full p-4 md:p-6 bg-slate-50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] font-black text-slate-700 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all text-base md:text-xl active:scale-95 touch-manipulation disabled:opacity-50"
+                               className="w-full p-4 md:p-6 bg-slate-50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] font-black text-slate-700 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all text-base md:text-xl active:scale-95 disabled:opacity-50"
                              >
                                {opt}
                              </button>
@@ -1629,19 +1528,19 @@
                        <div className="text-center animate-in slide-in-from-right-8 duration-300" key={`sc-${currentQuestion}`}>
                          <p className="text-xs md:text-sm font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Susun Huruf Untuk Arti:</p>
                          <h2 className="text-2xl md:text-4xl font-black text-emerald-600 mb-8 md:mb-10 tracking-tight">
-                           "{quizQuestions[currentQuestion]?.arti}"
+                           "{currentMufrodatList[currentQuestion].arti}"
                          </h2>
                          
                          <div className="flex justify-center flex-wrap gap-2 md:gap-4 mb-8 md:mb-12 min-h-[70px] md:min-h-[90px] p-4 md:p-6 bg-slate-50 rounded-2xl md:rounded-[2rem] border-2 border-dashed border-slate-200" dir="rtl">
                            {currentGuess.length === 0 && (
-                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah</span>
+                             <span className="text-slate-400 font-medium self-center text-xs md:text-sm">Klik huruf Arab di bawah...</span>
                            )}
                            {currentGuess.map((l, i) => (
                              <button 
                                key={i} 
                                onClick={() => removeLetterFromGuess(l)} 
                                disabled={isProcessing}
-                               className="w-12 h-12 md:w-16 md:h-16 bg-white border-2 border-emerald-500 text-emerald-700 rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-arabic shadow-sm hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all transform hover:scale-110 active:scale-95 touch-manipulation disabled:opacity-50"
+                               className="w-12 h-12 md:w-16 md:h-16 bg-white border-2 border-emerald-500 text-emerald-700 rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-arabic shadow-sm hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all transform hover:scale-110 disabled:opacity-50"
                              >
                                {l.char}
                              </button>
@@ -1654,7 +1553,7 @@
                                key={i} 
                                onClick={() => addLetterToGuess(l)} 
                                disabled={isProcessing}
-                               className="w-12 h-12 md:w-16 md:h-16 bg-emerald-600 text-white rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-arabic shadow-md hover:bg-emerald-700 active:scale-90 touch-manipulation transition-all disabled:opacity-50"
+                               className="w-12 h-12 md:w-16 md:h-16 bg-emerald-600 text-white rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-arabic shadow-md hover:bg-emerald-700 active:scale-90 transition-all disabled:opacity-50"
                              >
                                {l.char}
                              </button>
@@ -1665,7 +1564,7 @@
                            <button 
                              onClick={() => { setScrambledLetters([...scrambledLetters, ...currentGuess]); setCurrentGuess([]); }} 
                              disabled={isProcessing}
-                             className="flex-1 py-3 md:py-4 bg-slate-100 text-slate-500 rounded-xl md:rounded-2xl font-black flex items-center justify-center space-x-2 hover:bg-slate-200 transition-colors text-sm md:text-base active:scale-95 touch-manipulation disabled:opacity-50"
+                             className="flex-1 py-3 md:py-4 bg-slate-100 text-slate-500 rounded-xl md:rounded-2xl font-black flex items-center justify-center space-x-2 hover:bg-slate-200 transition-colors text-sm md:text-base disabled:opacity-50"
                            >
                              <RefreshCw size={18}/>
                              <span>Ulang</span>
@@ -1673,7 +1572,7 @@
                            <button 
                              onClick={checkScrambleAnswer} 
                              disabled={scrambledLetters.length > 0 || isProcessing} 
-                             className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg disabled:opacity-50 disabled:shadow-none hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation text-sm md:text-base"
+                             className="flex-[2] py-3 md:py-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg disabled:opacity-50 disabled:shadow-none hover:bg-emerald-700 transition-all active:scale-95 text-sm md:text-base"
                            >
                              Kunci Jawaban
                            </button>
@@ -1694,7 +1593,7 @@
                      <button 
                        onClick={submitQuiz} 
                        disabled={isProcessing}
-                       className="w-full max-w-sm mx-auto bg-emerald-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation disabled:opacity-50 flex items-center justify-center gap-2"
+                       className="w-full max-w-sm mx-auto bg-emerald-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                      >
                        {isProcessing ? "Menyimpan Data..." : "Kirim Kuis Sekarang"} <ArrowRight size={20}/>
                      </button>
@@ -1722,13 +1621,13 @@
                      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                        <button 
                          onClick={() => setQuizStep(0)} 
-                         className="flex-1 py-4 md:py-5 bg-white border-2 border-slate-100 rounded-xl md:rounded-2xl font-black text-slate-600 hover:bg-slate-50 transition-colors active:scale-95 touch-manipulation"
+                         className="flex-1 py-4 md:py-5 bg-white border-2 border-slate-100 rounded-xl md:rounded-2xl font-black text-slate-600 hover:bg-slate-50 transition-colors"
                        >
                          Coba Lagi
                        </button>
                        <button 
                          onClick={() => {setActiveTab('riwayat'); window.scrollTo(0,0);}} 
-                         className="flex-1 py-4 md:py-5 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all active:scale-95 touch-manipulation"
+                         className="flex-1 py-4 md:py-5 bg-emerald-600 text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all"
                        >
                          Lihat Riwayat
                        </button>
@@ -1747,7 +1646,7 @@
                     {myScores.length > 0 && (
                       <button
                         onClick={handleResetHistory}
-                        className="flex items-center justify-center gap-2 bg-red-50 text-red-500 px-4 py-2 rounded-xl border border-red-100 font-bold text-[10px] md:text-sm shadow-sm hover:bg-red-100 transition-colors active:scale-95 touch-manipulation"
+                        className="flex items-center justify-center gap-2 bg-red-50 text-red-500 px-4 py-2 rounded-xl border border-red-100 font-bold text-[10px] md:text-sm shadow-sm hover:bg-red-100 transition-colors"
                       >
                         <Trash2 size={16} /> Reset
                       </button>
